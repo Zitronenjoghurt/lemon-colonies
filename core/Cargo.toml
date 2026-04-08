@@ -9,5 +9,8 @@ data = ["migration", "sea-orm"]
 [dependencies]
 migration = { path = "migration", optional = true }
 sea-orm = { version = "2.0.0-rc.37", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"], optional = true }
+serde = { version = "1.0.228", features = ["derive"], optional = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

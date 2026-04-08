@@ -1,5 +1,9 @@
+use crate::app::App;
+use egui_macroquad::macroquad;
 use egui_macroquad::macroquad::prelude::*;
-use egui_macroquad::{egui, macroquad};
+
+mod app;
+mod game;
 
 fn window_conf() -> Conf {
     Conf {
@@ -9,22 +13,20 @@ fn window_conf() -> Conf {
         window_width: 1920,
         window_height: 1080,
         high_dpi: true,
+        platform: miniquad::conf::Platform {
+            webgl_version: miniquad::conf::WebGLVersion::WebGL2,
+            ..Default::default()
+        },
         ..Default::default()
     }
 }
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    loop {
-        clear_background(BLACK);
+    #[cfg(target_arch = "wasm32")]
+    std::panic::set_hook(Box::new(|info| {
+        miniquad::error!("{}", info);
+    }));
 
-        egui_macroquad::ui(|ctx| {
-            egui::Window::new("Debug").show(ctx, |ui| {
-                ui.label("It works!");
-            });
-        });
-        egui_macroquad::draw();
-
-        next_frame().await;
-    }
+    App::load().unwrap().run().await;
 }
