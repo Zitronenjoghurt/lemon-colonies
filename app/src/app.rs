@@ -27,6 +27,7 @@ impl App {
     }
 
     pub fn render_game(&mut self) {
+        self.game.update();
         clear_background(BLACK);
         self.game.draw();
     }

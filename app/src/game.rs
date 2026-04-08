@@ -23,6 +23,10 @@ impl Game {
         })
     }
 
+    pub fn update(&mut self) {
+        self.camera.update();
+    }
+
     pub fn draw(&mut self) {
         self.world.draw(&self.atlas, &self.camera);
     }
