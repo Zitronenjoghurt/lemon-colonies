@@ -1,0 +1,13 @@
+[package]
+name = "lemon-colonies-core"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+data = ["migration", "sea-orm"]
+
+[dependencies]
+migration = { path = "migration", optional = true }
+sea-orm = { version = "2.0.0-rc.37", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"], optional = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

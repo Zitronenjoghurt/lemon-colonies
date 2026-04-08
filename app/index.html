@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
+    <title>Lemon Colonies</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+            touch-action: manipulation;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+<canvas id="glcanvas" tabindex="1"></canvas>
+<script src="public/mq_js_bundle.js"></script>
+<script>load("lemon-colonies-app.wasm");</script>
+</body>
+</html>

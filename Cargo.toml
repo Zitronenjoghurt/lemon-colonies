@@ -1,0 +1,10 @@
+[workspace]
+members = ["app", "core", "server"]
+resolver = "2"
+
+[workspace.dependencies]
+lemon-colonies-core = { path = "core" }
+anyhow = "1.0.102"
+thiserror = "2.0.18"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
