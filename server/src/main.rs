@@ -1,13 +1,15 @@
 use crate::config::Config;
 use axum::Router;
-use lemon_colonies_core::data::Data;
 use std::net::SocketAddr;
 use tower_http::services::ServeDir;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
+mod api;
 mod config;
 mod error;
+mod integrations;
+mod state;
 
 #[tokio::main]
 async fn main() {
@@ -15,9 +17,13 @@ async fn main() {
     info!("Starting server...");
 
     let config = Config::from_env().unwrap();
-    let _data = Data::initialize(&config.database_url).await.unwrap();
+    let state = state::ServerState::new(config).await.unwrap();
+    let api = api::build(&state).await;
 
-    let router = Router::new().fallback_service(ServeDir::new("./static"));
+    let router = Router::new()
+        .nest("/api", api)
+        .fallback_service(ServeDir::new("./static"))
+        .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 50434));
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();

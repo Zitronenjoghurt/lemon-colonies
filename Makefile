@@ -12,3 +12,6 @@ build:
 
 migration:
 	cd ./core && sea-orm-cli migrate generate $(NAME)
+
+entities:
+	sea-orm-cli generate entity -o ./core/src/data/entity --database-url postgresql://admin:root@localhost:5432/lemcol

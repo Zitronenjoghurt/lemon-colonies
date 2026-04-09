@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-data = ["migration", "sea-orm"]
+data = ["async-trait", "migration", "sea-orm"]
 
 [dependencies]
 migration = { path = "migration", optional = true }
+async-trait = { version = "0.1.89", optional = true }
 sea-orm = { version = "2.0.0-rc.37", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"], optional = true }
-serde = { version = "1.0.228", features = ["derive"], optional = true }
+serde = { workspace = true, optional = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 thiserror = { workspace = true }
