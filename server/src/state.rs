@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::error::ServerResult;
 use crate::integrations::Integrations;
+use crate::websocket::Websocket;
 use lemon_colonies_core::data::service::Services;
 use lemon_colonies_core::data::Data;
 use std::sync::Arc;
@@ -11,6 +12,7 @@ pub struct ServerState {
     pub data: Arc<Data>,
     pub integrations: Arc<Integrations>,
     pub service: Arc<Services>,
+    pub ws: Arc<Websocket>,
 }
 
 impl ServerState {
@@ -23,6 +25,7 @@ impl ServerState {
             integrations: Arc::new(Integrations::new(&config.integrations)?),
             config: Arc::new(config),
             service: Arc::new(service),
+            ws: Arc::new(Websocket::default()),
         })
     }
 }

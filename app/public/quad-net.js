@@ -11,7 +11,7 @@ register_plugin = function (importObject) {
     importObject.env.http_try_recv = http_try_recv;
 }
 
-miniquad_add_plugin({ register_plugin, on_init, version: 1, name: "quad_net" });
+miniquad_add_plugin({register_plugin, on_init, version: 1, name: "quad_net"});
 
 var quad_socket;
 var connected = 0;
@@ -24,11 +24,19 @@ function ws_is_connected() {
 function ws_connect(addr) {
     quad_socket = new WebSocket(consume_js_object(addr));
     quad_socket.binaryType = 'arraybuffer';
-    quad_socket.onopen = function() {
+    quad_socket.onopen = function () {
         connected = 1;
     };
 
-    quad_socket.onmessage = function(msg) {
+    quad_socket.onclose = function () {
+        connected = 0;
+    };
+
+    quad_socket.onerror = function () {
+        connected = 0;
+    };
+
+    quad_socket.onmessage = function (msg) {
         if (typeof msg.data == "string") {
             received_buffer.push({
                 "text": 1,
@@ -43,7 +51,7 @@ function ws_connect(addr) {
         }
 
     }
-};
+}
 
 function ws_send(data) {
     var array = consume_js_object(data);
@@ -53,7 +61,7 @@ function ws_send(data) {
     } else {
         quad_socket.send(array);
     }
-};
+}
 
 function ws_try_recv() {
     if (received_buffer.length != 0) {
@@ -105,7 +113,7 @@ function http_make_request(scheme, url, body, headers) {
     xhr.onload = function (e) {
         if (this.status == 200) {
             var uInt8Array = new Uint8Array(this.response);
-            
+
             ongoing_requests[cid] = uInt8Array;
         }
     }

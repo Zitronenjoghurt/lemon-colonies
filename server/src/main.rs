@@ -1,4 +1,5 @@
 use crate::config::Config;
+use axum::routing::get;
 use axum::Router;
 use std::net::SocketAddr;
 use tower_http::services::ServeDir;
@@ -9,7 +10,9 @@ mod api;
 mod config;
 mod error;
 mod integrations;
+mod layers;
 mod state;
+mod websocket;
 
 #[tokio::main]
 async fn main() {
@@ -18,11 +21,15 @@ async fn main() {
 
     let config = Config::from_env().unwrap();
     let state = state::ServerState::new(config).await.unwrap();
-    let api = api::build(&state).await;
+    let api = api::build().await;
+
+    let session_layer = layers::session::build_session_layer(&state).await;
 
     let router = Router::new()
+        .route("/ws", get(websocket::ws_handler))
         .nest("/api", api)
         .fallback_service(ServeDir::new("./static"))
+        .layer(session_layer)
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 50434));
@@ -57,6 +64,8 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
+
+    info!("Shutting down...");
 }
 
 fn init_logging() {
