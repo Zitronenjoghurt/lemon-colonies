@@ -3,12 +3,14 @@ use egui_macroquad::macroquad;
 use egui_macroquad::macroquad::prelude::*;
 
 mod app;
+mod bindings;
 mod game;
+mod http;
 
 fn window_conf() -> Conf {
     Conf {
         window_title: "Lemon Colonies".to_owned(),
-        fullscreen: false,
+        fullscreen: true,
         window_resizable: true,
         window_width: 1920,
         window_height: 1080,

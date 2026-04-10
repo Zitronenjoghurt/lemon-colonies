@@ -9,10 +9,16 @@
 
         if (res.ok) {
             canvas.style.display = "block";
-            const s = document.createElement("script");
-            s.src = "public/mq_js_bundle.js";
-            s.onload = () => load("lemon-colonies-app.wasm");
-            document.body.appendChild(s);
+            miniquad_add_plugin({
+                name: "lemon_colonies_helpers",
+                version: "1.0.0",
+                register_plugin: function (importObject) {
+                    importObject.env.js_reload = function () {
+                        window.location.reload();
+                    };
+                }
+            });
+            load("lemon-colonies-app.wasm");
         } else {
             loginScreen.style.display = "flex";
         }
@@ -20,8 +26,4 @@
         spinner.style.display = "none";
         loginScreen.style.display = "flex";
     }
-
-    window.logout = function () {
-        window.location.reload();
-    };
 })();

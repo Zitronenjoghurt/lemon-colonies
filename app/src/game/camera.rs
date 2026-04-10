@@ -6,32 +6,39 @@ const MAX_ZOOM: f32 = 100.0;
 pub struct ClientCamera {
     camera: Camera2D,
     grab: Option<Vec2>,
+    zoom_level: f32,
 }
 
 impl Default for ClientCamera {
     fn default() -> Self {
-        let zoom = vec2(1.0 / screen_width(), 1.0 / screen_height());
         Self {
-            camera: Camera2D {
-                zoom,
-                ..Default::default()
-            },
+            camera: Camera2D::default(),
             grab: None,
+            zoom_level: 1.0,
         }
     }
 }
 
 impl ClientCamera {
     pub fn update(&mut self) {
+        self.camera.zoom = vec2(
+            self.zoom_level / screen_width(),
+            self.zoom_level / screen_height(),
+        );
+
         let scroll = mouse_wheel().1;
         if scroll != 0.0 {
             let mouse_screen = vec2(mouse_position().0, mouse_position().1);
             let before = self.camera.screen_to_world(mouse_screen);
-            self.camera.zoom *= 1.05_f32.powf(scroll);
-            self.camera.zoom = self.camera.zoom.clamp(
-                vec2(MIN_ZOOM / screen_width(), MIN_ZOOM / screen_height()),
-                vec2(MAX_ZOOM / screen_width(), MAX_ZOOM / screen_height()),
+
+            self.zoom_level *= 1.05_f32.powf(scroll);
+            self.zoom_level = self.zoom_level.clamp(MIN_ZOOM, MAX_ZOOM);
+
+            self.camera.zoom = vec2(
+                self.zoom_level / screen_width(),
+                self.zoom_level / screen_height(),
             );
+
             let after = self.camera.screen_to_world(mouse_screen);
             self.camera.target += before - after;
         }
