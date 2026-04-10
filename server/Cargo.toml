@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-lemon-colonies-core = { workspace = true, features = ["data"] }
+lemon-colonies-core = { workspace = true, features = ["data", "serde"] }
 axum = "0.8.8"
 oauth2 = "5.0.0"
 petname = "2.0.2"

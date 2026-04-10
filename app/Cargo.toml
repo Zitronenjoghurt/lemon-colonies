@@ -8,9 +8,12 @@ all-features = true
 targets = ["wasm32-unknown-unknown"]
 
 [dependencies]
-lemon-colonies-core = { workspace = true }
+lemon-colonies-core = { workspace = true, features = ["serde"] }
 anyhow = { workspace = true }
 egui-macroquad = "0.17.3"
+egui-notify = "0.19.0"
 quad-net = "0.1.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }

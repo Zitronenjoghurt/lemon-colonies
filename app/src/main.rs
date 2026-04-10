@@ -6,6 +6,7 @@ mod app;
 mod bindings;
 mod game;
 mod http;
+mod ui;
 
 fn window_conf() -> Conf {
     Conf {

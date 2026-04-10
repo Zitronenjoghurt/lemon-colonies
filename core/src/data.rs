@@ -5,6 +5,7 @@ use sea_orm::{ConnectOptions, DatabaseConnection};
 use tracing::info;
 
 pub mod entity;
+pub mod service;
 pub mod store;
 
 pub struct Data {
