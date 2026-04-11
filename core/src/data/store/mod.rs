@@ -1,12 +1,16 @@
 use crate::error::{CoreError, CoreResult};
+use futures::stream::BoxStream;
+use futures::StreamExt;
 use sea_orm::sea_query::IntoCondition;
 use sea_orm::*;
 
+pub mod chunk;
+pub mod colony;
 pub mod user;
 
 #[async_trait::async_trait]
 pub trait Store {
-    type Entity: EntityTrait;
+    type Entity: EntityTrait<Model: Sync>;
     type ActiveModel: ActiveModelTrait<Entity = Self::Entity> + ActiveModelBehavior + Send;
 
     fn db(&self) -> &DatabaseConnection;
@@ -33,6 +37,31 @@ pub trait Store {
             .one(self.db())
             .await
             .map_err(Into::into)
+    }
+
+    async fn get_all_stream<'a>(
+        &'a self,
+    ) -> CoreResult<BoxStream<'a, CoreResult<<Self::Entity as EntityTrait>::Model>>> {
+        let stream = Self::Entity::find()
+            .stream(self.db())
+            .await
+            .map_err(Into::<CoreError>::into)?;
+        Ok(stream.map(|res| res.map_err(Into::into)).boxed())
+    }
+
+    async fn stream_by<'a, F>(
+        &'a self,
+        filter: F,
+    ) -> CoreResult<BoxStream<'a, CoreResult<<Self::Entity as EntityTrait>::Model>>>
+    where
+        F: IntoCondition + Send,
+    {
+        let stream = Self::Entity::find()
+            .filter(filter)
+            .stream(self.db())
+            .await
+            .map_err(Into::<CoreError>::into)?;
+        Ok(stream.map(|res| res.map_err(Into::into)).boxed())
     }
 
     async fn insert(
@@ -86,5 +115,20 @@ pub trait Store {
             Some(model) => Ok(model),
             None => create().insert(self.db()).await.map_err(CoreError::from),
         }
+    }
+
+    async fn count<F>(&self, filter: F) -> CoreResult<u64>
+    where
+        F: IntoCondition + Send,
+    {
+        PaginatorTrait::count(Self::Entity::find().filter(filter), self.db())
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn count_all(&self) -> CoreResult<u64> {
+        PaginatorTrait::count(Self::Entity::find(), self.db())
+            .await
+            .map_err(Into::into)
     }
 }

@@ -3,27 +3,32 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "user")]
+#[sea_orm(table_name = "colony")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub id: Uuid,
-    #[sea_orm(unique)]
-    pub discord_id: Option<String>,
-    #[sea_orm(unique)]
-    pub username: String,
+    pub chunk_x: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub chunk_y: i32,
+    pub user_id: Uuid,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::colony::Entity")]
-    Colony,
+    #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
+    User,
 }
 
-impl Related<super::colony::Entity> for Entity {
+impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Colony.def()
+        Relation::User.def()
     }
 }
 

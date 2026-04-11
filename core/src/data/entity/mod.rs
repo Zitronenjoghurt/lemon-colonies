@@ -2,4 +2,6 @@
 
 pub mod prelude;
 
+pub mod chunk;
+pub mod colony;
 pub mod user;

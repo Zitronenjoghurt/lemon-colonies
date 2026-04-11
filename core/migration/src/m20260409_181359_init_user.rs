@@ -31,10 +31,10 @@ impl MigrationTrait for Migration {
                      END;
                      $$ LANGUAGE plpgsql;
 
-                     CREATE TRIGGER trigger_user_updated_at
-                         BEFORE UPDATE ON \"user\"
-                         FOR EACH ROW
-                         EXECUTE FUNCTION set_updated_at();",
+                CREATE TRIGGER trigger_user_updated_at
+                    BEFORE UPDATE ON \"user\"
+                    FOR EACH ROW
+                    EXECUTE FUNCTION set_updated_at();",
             )
             .await?;
 

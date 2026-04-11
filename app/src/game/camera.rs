@@ -59,4 +59,12 @@ impl ClientCamera {
     pub fn apply(&self) {
         set_camera(&self.camera);
     }
+
+    pub fn visible_world_bounds(&self) -> (Vec2, Vec2) {
+        let top_left = self.camera.screen_to_world(vec2(0.0, 0.0));
+        let bottom_right = self
+            .camera
+            .screen_to_world(vec2(screen_width(), screen_height()));
+        (top_left, bottom_right)
+    }
 }

@@ -4,13 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-data = ["async-trait", "migration", "sea-orm"]
+data = ["async-trait", "futures", "migration", "sea-orm"]
 serde = ["dep:serde", "dep:serde_json"]
 
 [dependencies]
 migration = { path = "migration", optional = true }
 async-trait = { version = "0.1.89", optional = true }
 bitcode = { workspace = true, optional = true }
+fastrand = "2.4.1"
+futures = { version = "0.3.32", optional = true }
 sea-orm = { version = "2.0.0-rc.37", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"], optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }

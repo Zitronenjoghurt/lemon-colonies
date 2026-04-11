@@ -3,28 +3,19 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "user")]
+#[sea_orm(table_name = "chunk")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub id: Uuid,
-    #[sea_orm(unique)]
-    pub discord_id: Option<String>,
-    #[sea_orm(unique)]
-    pub username: String,
+    pub x: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub y: i32,
+    #[sea_orm(column_type = "VarBinary(StringLen::None)")]
+    pub terrain: Vec<u8>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(has_many = "super::colony::Entity")]
-    Colony,
-}
-
-impl Related<super::colony::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Colony.def()
-    }
-}
+pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}

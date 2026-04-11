@@ -4,7 +4,7 @@ use crate::ui::state::UiState;
 use crate::ui::UiViewer;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::color::BLACK;
-use egui_macroquad::macroquad::logging::info;
+use egui_macroquad::macroquad::logging::{debug, info};
 use egui_macroquad::macroquad::prelude::{clear_background, next_frame};
 use egui_notify::Toasts;
 use lemon_colonies_core::messages::server::ServerMessage;
@@ -49,7 +49,7 @@ impl App {
     }
 
     pub fn render_game(&mut self) {
-        self.game.update();
+        self.game.update(&mut self.ws);
         clear_background(BLACK);
         self.game.draw();
     }
@@ -81,9 +81,17 @@ impl App {
     pub fn handle_message(&mut self, message: ServerMessage) {
         match message {
             ServerMessage::Hello => info!("Hello from server!"),
-            ServerMessage::Shutdown => {
-                self.ws.disconnect("Server shut down.");
-                self.toasts.error("Disconnected: server shut down.");
+            ServerMessage::Chunks(chunks) => {
+                debug!("Received {} chunks", chunks.len());
+                self.game.handle_chunks(chunks);
+            }
+            ServerMessage::ColonyPositions(positions) => {
+                debug!("Received {} colony positions", positions.len());
+                self.game.handle_colony_positions(&positions);
+            }
+            ServerMessage::FogOfWar(coords) => {
+                debug!("Received {} fog of war coords", coords.len());
+                self.game.handle_fog_of_war(&coords);
             }
         }
     }

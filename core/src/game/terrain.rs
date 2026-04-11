@@ -1,8 +1,9 @@
-use strum_macros::{EnumCount, EnumIter};
+use strum_macros::{EnumCount, EnumIter, FromRepr};
 
 pub const TERRAIN_SIZE: usize = 8;
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, EnumIter, EnumCount)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
+#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(u16)]
 pub enum Terrain {

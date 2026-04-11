@@ -1,7 +1,9 @@
 use crate::error::CoreResult;
+use crate::game::config::GameConfig;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::sqlx::PgPool;
 use sea_orm::{ConnectOptions, DatabaseConnection};
+use std::sync::Arc;
 use tracing::info;
 
 pub mod entity;
@@ -10,6 +12,8 @@ pub mod store;
 
 pub struct Data {
     connection: DatabaseConnection,
+    pub chunk: store::chunk::ChunkStore,
+    pub colony: store::colony::ColonyStore,
     pub user: store::user::UserStore,
 }
 
@@ -22,6 +26,8 @@ impl Data {
         info!("Connected to database!");
 
         let data = Self {
+            chunk: store::chunk::ChunkStore::new(&connection),
+            colony: store::colony::ColonyStore::new(&connection),
             user: store::user::UserStore::new(&connection),
             connection,
         };

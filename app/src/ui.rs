@@ -20,6 +20,11 @@ impl<'a> UiViewer<'a> {
 
         egui::Window::new("Debug").show(ctx, |ui| {
             ui.horizontal(|ui| {
+                ui.label("Loaded chunks:");
+                ui.label(self.game.world.chunk_count().to_string());
+            });
+
+            ui.horizontal(|ui| {
                 ui.label("Logged in as:");
                 UsernameWidget::new(self.http).ui(ui);
             });

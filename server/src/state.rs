@@ -4,11 +4,13 @@ use crate::integrations::Integrations;
 use crate::websocket::Websocket;
 use lemon_colonies_core::data::service::Services;
 use lemon_colonies_core::data::Data;
+use lemon_colonies_core::game::config::GameConfig;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ServerState {
     pub config: Arc<Config>,
+    pub game_config: Arc<GameConfig>,
     pub data: Arc<Data>,
     pub integrations: Arc<Integrations>,
     pub service: Arc<Services>,
@@ -18,12 +20,15 @@ pub struct ServerState {
 impl ServerState {
     pub async fn new(config: Config) -> ServerResult<Self> {
         let data = Arc::new(Data::initialize(&config.database_url).await?);
-        let service = Services::new(&data);
+
+        let game_config = Arc::new(GameConfig::from_env()?);
+        let service = Services::new(&data, &game_config);
 
         Ok(Self {
             data,
             integrations: Arc::new(Integrations::new(&config.integrations)?),
             config: Arc::new(config),
+            game_config,
             service: Arc::new(service),
             ws: Arc::new(Websocket::default()),
         })

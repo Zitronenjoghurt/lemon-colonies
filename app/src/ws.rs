@@ -25,6 +25,10 @@ impl Ws {
         self.state = WsState::Error(reason.as_ref().to_string());
     }
 
+    pub fn is_connected(&self) -> bool {
+        matches!(self.state, WsState::Connected(_))
+    }
+
     pub fn update(&mut self, toasts: &mut egui_notify::Toasts) {
         if let WsState::Connecting((socket, start_time)) = &self.state {
             if socket.connected() {
@@ -75,6 +79,14 @@ impl Ws {
 
     pub fn hello(&mut self) {
         self.send_bytes(&ClientMessage::Hello.as_bytes());
+    }
+
+    pub fn request_chunks(&mut self, coords: Vec<(i32, i32)>) {
+        self.send_bytes(&ClientMessage::RequestChunks(coords).as_bytes());
+    }
+
+    pub fn request_colony_positions(&mut self) {
+        self.send_bytes(&ClientMessage::ColonyPositions.as_bytes());
     }
 }
 

@@ -69,9 +69,9 @@ async fn get_callback(
     } else {
         let name = petname(2, "-").unwrap();
         state
-            .data
+            .service
             .user
-            .create_from_discord(&discord_user.id, name)
+            .register_from_discord(&discord_user.id, name)
             .await?
     };
 
