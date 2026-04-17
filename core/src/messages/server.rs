@@ -7,7 +7,6 @@ pub enum ServerMessage {
     Hello,
     ColonyPositions(Vec<(i32, i32)>),
     Chunks(Vec<Chunk>),
-    FogOfWar(Vec<(i32, i32)>),
 }
 
 impl ServerMessage {

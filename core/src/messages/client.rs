@@ -1,10 +1,11 @@
 use crate::error::CoreResult;
+use crate::math::rect::Rect;
 
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub enum ClientMessage {
     Hello,
     ColonyPositions,
-    RequestChunks(Vec<(i32, i32)>),
+    SubscribeToChunks(Rect<i32>),
 }
 
 impl ClientMessage {

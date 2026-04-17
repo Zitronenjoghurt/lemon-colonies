@@ -3,6 +3,7 @@ use crate::state::ServerState;
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
+use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use tower_sessions_sqlx_store::sqlx::types::Uuid;
@@ -52,7 +53,7 @@ impl WebsocketConnection {
         match message {
             ClientMessage::ColonyPositions => self.handle_colony_positions().await?,
             ClientMessage::Hello => self.respond(ServerMessage::Hello),
-            ClientMessage::RequestChunks(chunk_coords) => self.handle_chunks(chunk_coords).await?,
+            ClientMessage::SubscribeToChunks(rect) => self.handle_chunk_subscription(rect).await?,
         };
         Ok(())
     }
@@ -71,7 +72,11 @@ impl WebsocketConnection {
         Ok(())
     }
 
-    async fn handle_chunks(&self, chunk_coords: Vec<(i32, i32)>) -> ServerResult<()> {
+    async fn handle_chunk_subscription(&self, rect: Rect<i32>) -> ServerResult<()> {
+        if rect.area() > 1000 {
+            return Ok(());
+        }
+
         let visibility = self
             .state
             .service
@@ -79,30 +84,26 @@ impl WebsocketConnection {
             .visibility_for_user(self.user_id)
             .await?;
 
-        for coords in chunk_coords.chunks(100) {
-            let mut chunks = Vec::new();
-            let mut fog_of_war = Vec::new();
+        let old_rect = self.state.ws.subscribe_to_chunks(self.user_id, rect);
 
-            for (x, y) in coords {
-                if !visibility.is_visible(*x, *y) {
-                    fog_of_war.push((*x, *y));
-                } else {
-                    let chunk = self
-                        .state
-                        .data
-                        .chunk
-                        .load_or_generate(*x, *y, self.state.game_config.world_seed)
-                        .await?;
-                    chunks.push(chunk);
-                }
-            }
+        let coords: Vec<_> = rect
+            .iter_points()
+            .filter(|p| {
+                old_rect.is_none_or(|old| !old.contains(p)) && visibility.is_visible(p.x, p.y)
+            })
+            .map(|p| (p.x, p.y))
+            .collect();
+
+        for batch in coords.chunks(100) {
+            let chunks = self
+                .state
+                .data
+                .chunk
+                .load_or_generate_many(batch, self.state.game_config.world_seed)
+                .await?;
 
             if !chunks.is_empty() {
                 self.respond(ServerMessage::Chunks(chunks));
-            }
-
-            if !fog_of_war.is_empty() {
-                self.respond(ServerMessage::FogOfWar(fog_of_war));
             }
         }
 

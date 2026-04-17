@@ -1,4 +1,5 @@
 use egui_macroquad::macroquad::time::get_time;
+use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use quad_net::web_socket::WebSocket;
@@ -81,8 +82,8 @@ impl Ws {
         self.send_bytes(&ClientMessage::Hello.as_bytes());
     }
 
-    pub fn request_chunks(&mut self, coords: Vec<(i32, i32)>) {
-        self.send_bytes(&ClientMessage::RequestChunks(coords).as_bytes());
+    pub fn subscribe_chunks(&mut self, view_rect: Rect<i32>) {
+        self.send_bytes(&ClientMessage::SubscribeToChunks(view_rect).as_bytes());
     }
 
     pub fn request_colony_positions(&mut self) {

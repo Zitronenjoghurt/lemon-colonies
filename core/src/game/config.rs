@@ -7,7 +7,9 @@ pub struct GameConfig {
 impl GameConfig {
     pub fn from_env() -> CoreResult<Self> {
         Ok(Self {
-            world_seed: std::env::var("WORLD_SEED")?.parse::<u64>()?,
+            world_seed: std::env::var("WORLD_SEED")
+                .unwrap_or("0".to_string())
+                .parse::<u64>()?,
         })
     }
 }

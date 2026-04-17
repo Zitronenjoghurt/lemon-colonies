@@ -1960,6 +1960,7 @@ dependencies = [
  "fastrand",
  "futures",
  "migration",
+ "num-traits",
  "sea-orm",
  "serde",
  "serde_json",

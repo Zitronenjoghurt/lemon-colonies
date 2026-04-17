@@ -3,7 +3,9 @@ use crate::game::camera::ClientCamera;
 use crate::game::world::ClientWorld;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::logging::debug;
-use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
+use egui_macroquad::macroquad::prelude::get_time;
+use lemon_colonies_core::game::chunk::Chunk;
+use lemon_colonies_core::math::rect::Rect;
 
 pub mod atlas;
 pub mod camera;
@@ -11,10 +13,14 @@ mod chunk;
 pub mod sprite;
 mod world;
 
+const CHUNK_SUBSCRIBE_DEBOUNCE_SECS: f64 = 0.2;
+
 pub struct Game {
     atlas: AtlasStore,
     pub camera: ClientCamera,
     pub world: ClientWorld,
+    last_subscribed_rect: Option<Rect<i32>>,
+    rect_dirty_since: Option<f64>,
 }
 
 impl Game {
@@ -23,6 +29,8 @@ impl Game {
             atlas: AtlasStore::load()?,
             camera: Default::default(),
             world: Default::default(),
+            last_subscribed_rect: None,
+            rect_dirty_since: None,
         })
     }
 
@@ -31,7 +39,7 @@ impl Game {
 
         if ws.is_connected() {
             self.request_colony_positions(ws);
-            self.request_chunks(ws);
+            self.update_chunk_subscription(ws);
         }
     }
 
@@ -42,36 +50,25 @@ impl Game {
 
 // Updates
 impl Game {
-    pub fn request_chunks(&mut self, ws: &mut Ws) {
-        let (top_left, bottom_right) = self.camera.visible_world_bounds();
-
-        let min_x = top_left.x.min(bottom_right.x);
-        let max_x = top_left.x.max(bottom_right.x);
-        let min_y = top_left.y.min(bottom_right.y);
-        let max_y = top_left.y.max(bottom_right.y);
-
-        let min_cx = (min_x / CHUNK_EDGE_PIXELS as f32).floor() as i32;
-        let min_cy = (min_y / CHUNK_EDGE_PIXELS as f32).floor() as i32;
-        let max_cx = (max_x / CHUNK_EDGE_PIXELS as f32).ceil() as i32;
-        let max_cy = (max_y / CHUNK_EDGE_PIXELS as f32).ceil() as i32;
-
-        let mut chunks_to_request = Vec::new();
-        for x in (min_cx - 1)..=(max_cx + 1) {
-            for y in (min_cy - 1)..=(max_cy + 1) {
-                if self.world.should_request_chunk((x, y)) {
-                    chunks_to_request.push((x, y));
-                }
-            }
+    fn update_chunk_subscription(&mut self, ws: &mut Ws) {
+        let rect = self.camera.visible_rect();
+        if self.last_subscribed_rect == Some(rect) {
+            self.rect_dirty_since = None;
+            return;
         }
 
-        if !chunks_to_request.is_empty() {
-            debug!("Requesting {} chunk", chunks_to_request.len());
-            self.world.insert_pending_chunks(&chunks_to_request);
-            ws.request_chunks(chunks_to_request);
+        let now = get_time();
+        let dirty_since = *self.rect_dirty_since.get_or_insert(now);
+
+        if now - dirty_since < CHUNK_SUBSCRIBE_DEBOUNCE_SECS {
+            return;
         }
 
-        self.world
-            .unload_distant_chunks(min_cx, max_cx, min_cy, max_cy);
+        debug!("Subscribing to chunk rect: {:?}", rect);
+        self.last_subscribed_rect = Some(rect);
+        self.rect_dirty_since = None;
+        ws.subscribe_chunks(rect);
+        self.world.unload_distant_chunks(rect);
     }
 
     pub fn request_colony_positions(&mut self, ws: &mut Ws) {
@@ -90,9 +87,5 @@ impl Game {
 
     pub fn handle_colony_positions(&mut self, positions: &Vec<(i32, i32)>) {
         self.world.insert_colony_positions(positions)
-    }
-
-    pub fn handle_fog_of_war(&mut self, coords: &Vec<(i32, i32)>) {
-        self.world.insert_fog_of_war(coords);
     }
 }

@@ -8,17 +8,20 @@ use dashmap::DashMap;
 use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use lemon_colonies_core::data::store::Store;
+use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::ServerMessage;
 use tokio::sync::broadcast;
 use tower_sessions::Session;
 use tower_sessions_sqlx_store::sqlx::types::Uuid;
 use tracing::{error, info};
 
+mod chunk_subscriptions;
 mod connection;
 
 #[derive(Default)]
 pub struct Websocket {
     connections: DashMap<Uuid, broadcast::Sender<ServerMessage>>,
+    chunk_subscriptions: chunk_subscriptions::ChunkSubscriptions,
 }
 
 impl Websocket {
@@ -43,8 +46,7 @@ impl Websocket {
         };
 
         if should_remove {
-            self.connections.remove(&user_id);
-            info!("All connections closed for '{user_id}'.");
+            self.disconnect_user(user_id);
         }
     }
 
@@ -56,6 +58,17 @@ impl Websocket {
 
     pub fn is_user_connected(&self, user_id: Uuid) -> bool {
         self.connections.contains_key(&user_id)
+    }
+
+    /// Returns the previous rect if there is one.
+    pub fn subscribe_to_chunks(&self, user_id: Uuid, rect: Rect<i32>) -> Option<Rect<i32>> {
+        self.chunk_subscriptions.subscribe(user_id, rect)
+    }
+
+    fn disconnect_user(&self, user_id: Uuid) {
+        self.connections.remove(&user_id);
+        self.chunk_subscriptions.unsubscribe(user_id);
+        info!("All connections closed for '{user_id}'.");
     }
 }
 

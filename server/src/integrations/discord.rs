@@ -38,13 +38,12 @@ impl DiscordIntegration {
         code: AuthorizationCode,
         pkce_verifier: PkceCodeVerifier,
     ) -> ServerResult<BasicTokenResponse> {
-        Ok(self
-            .oauth_client
+        self.oauth_client
             .exchange_code(code)
             .set_pkce_verifier(pkce_verifier)
             .request_async(&self.api_client)
             .await
-            .map_err(|e| ServerError::TokenRequest(e.to_string()))?)
+            .map_err(|e| ServerError::TokenRequest(e.to_string()))
     }
 
     pub async fn get_user(&self, token: impl Display) -> ServerResult<Option<DiscordUser>> {

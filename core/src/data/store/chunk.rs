@@ -2,7 +2,9 @@ use crate::data::entity::chunk;
 use crate::data::store::Store;
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
-use sea_orm::DatabaseConnection;
+use sea_orm::ColumnTrait;
+use sea_orm::QueryFilter;
+use sea_orm::{Condition, DatabaseConnection, EntityTrait, ExprTrait};
 
 pub struct ChunkStore {
     connection: DatabaseConnection,
@@ -40,6 +42,50 @@ impl ChunkStore {
         let chunk_to_insert = chunk::ActiveModel::from(generated_chunk);
         let saved_chunk = self.insert(chunk_to_insert).await?;
 
-        Ok(Chunk::try_from(saved_chunk)?)
+        Chunk::try_from(saved_chunk)
+    }
+
+    pub async fn load_many(&self, coords: &[(i32, i32)]) -> CoreResult<Vec<Chunk>> {
+        let mut condition = Condition::any();
+        for &(x, y) in coords {
+            condition = condition.add(chunk::Column::X.eq(x).and(chunk::Column::Y.eq(y)));
+        }
+
+        let models = chunk::Entity::find()
+            .filter(condition)
+            .all(self.db())
+            .await?;
+
+        models.into_iter().map(Chunk::try_from).collect()
+    }
+
+    pub async fn load_or_generate_many(
+        &self,
+        coords: &[(i32, i32)],
+        world_seed: u64,
+    ) -> CoreResult<Vec<Chunk>> {
+        let existing = self.load_many(coords).await?;
+        let existing_set: std::collections::HashSet<(i32, i32)> =
+            existing.iter().map(|c| (c.x, c.y)).collect();
+
+        let mut to_insert = Vec::new();
+        for &(x, y) in coords {
+            if !existing_set.contains(&(x, y)) {
+                to_insert.push(Chunk::generate(x, y, world_seed));
+            }
+        }
+
+        if !to_insert.is_empty() {
+            let models: Vec<chunk::ActiveModel> = to_insert
+                .iter()
+                .cloned()
+                .map(chunk::ActiveModel::from)
+                .collect();
+            chunk::Entity::insert_many(models).exec(self.db()).await?;
+        }
+
+        let mut all = existing;
+        all.extend(to_insert);
+        Ok(all)
     }
 }

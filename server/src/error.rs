@@ -10,6 +10,8 @@ pub enum ServerError {
     Env(#[from] std::env::VarError),
     #[error("Json error: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("Parse int error: {0}")]
+    ParseInt(#[from] std::num::ParseIntError),
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] oauth2::reqwest::Error),
     #[error("OAuth2 token request error: {0}")]

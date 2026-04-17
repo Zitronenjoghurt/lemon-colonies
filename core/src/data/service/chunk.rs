@@ -19,6 +19,7 @@ impl ChunkService {
 }
 
 impl ChunkService {
+    // ToDo: Consider caching if it becomes expensive
     pub async fn visibility_for_user(&self, user_id: Uuid) -> CoreResult<ChunkVisibility> {
         let mut colony_stream = self
             .data

@@ -1,4 +1,6 @@
 use egui_macroquad::macroquad::prelude::*;
+use lemon_colonies_core::game::chunk::CHUNK_EDGE_PIXELS;
+use lemon_colonies_core::math::point::Point;
 
 const MIN_ZOOM: f32 = 1.0;
 const MAX_ZOOM: f32 = 100.0;
@@ -66,5 +68,24 @@ impl ClientCamera {
             .camera
             .screen_to_world(vec2(screen_width(), screen_height()));
         (top_left, bottom_right)
+    }
+
+    pub fn visible_rect(&self) -> lemon_colonies_core::math::rect::Rect<i32> {
+        let (top_left, bottom_right) = self.visible_world_bounds();
+
+        let min_x = top_left.x.min(bottom_right.x);
+        let max_x = top_left.x.max(bottom_right.x);
+        let min_y = top_left.y.min(bottom_right.y);
+        let max_y = top_left.y.max(bottom_right.y);
+
+        let min_cx = (min_x / CHUNK_EDGE_PIXELS as f32).floor() as i32 - 1;
+        let min_cy = (min_y / CHUNK_EDGE_PIXELS as f32).floor() as i32 - 1;
+        let max_cx = (max_x / CHUNK_EDGE_PIXELS as f32).ceil() as i32 + 1;
+        let max_cy = (max_y / CHUNK_EDGE_PIXELS as f32).ceil() as i32 + 1;
+
+        lemon_colonies_core::math::rect::Rect::new(
+            Point::new(min_cx, min_cy),
+            Point::new(max_cx, max_cy),
+        )
     }
 }

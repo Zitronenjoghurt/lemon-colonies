@@ -89,10 +89,6 @@ impl App {
                 debug!("Received {} colony positions", positions.len());
                 self.game.handle_colony_positions(&positions);
             }
-            ServerMessage::FogOfWar(coords) => {
-                debug!("Received {} fog of war coords", coords.len());
-                self.game.handle_fog_of_war(&coords);
-            }
         }
     }
 }
