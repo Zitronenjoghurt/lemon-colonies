@@ -1,10 +1,12 @@
-use crate::ui::widgets::connection_status::ConnectionStatusWidget;
-use crate::ui::widgets::username::UsernameWidget;
+use crate::ui::widgets::window_button::WindowButton;
+use crate::ui::windows::WindowId;
 use egui_macroquad::egui;
-use egui_macroquad::egui::Widget;
+use egui_macroquad::egui::{TopBottomPanel, Widget};
+pub use egui_phosphor::regular as icon;
 
 pub mod state;
 mod widgets;
+mod windows;
 
 pub struct UiViewer<'a> {
     pub game: &'a mut crate::game::Game,
@@ -18,28 +20,40 @@ impl<'a> UiViewer<'a> {
     pub fn show(&mut self, ctx: &egui::Context) {
         self.toasts.show(ctx);
 
-        egui::Window::new("Debug").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Loaded chunks:");
-                ui.label(self.game.world.chunk_count().to_string());
-            });
+        TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            self.top_panel(ui);
+        });
 
-            ui.horizontal(|ui| {
-                ui.label("Logged in as:");
-                UsernameWidget::new(self.http).ui(ui);
-            });
+        self.show_windows(ctx);
+    }
 
-            ui.horizontal(|ui| {
-                ui.label("WebSocket:");
-                ConnectionStatusWidget::new(self.ws).ui(ui);
-                if ui.button("Hello").clicked() {
-                    self.ws.hello();
-                }
-            });
+    fn show_windows(&mut self, ctx: &egui::Context) {
+        let window_ids: Vec<WindowId> = self.state.iter_windows().collect();
+        for window_id in window_ids {
+            window_id.show(self, ctx);
+        }
+    }
 
-            if ui.button("Logout").clicked() {
-                self.http.do_logout();
-            }
+    fn top_panel(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label("Lemon Colonies");
+            ui.separator();
+            self.window_button(ui, WindowId::Debug);
         });
     }
+}
+
+// Widget helpers
+impl<'a> UiViewer<'a> {
+    fn window_button(&mut self, ui: &mut egui::Ui, window_id: WindowId) -> egui::Response {
+        WindowButton::new(window_id, self.state).ui(ui)
+    }
+}
+
+pub fn setup_egui(ctx: &egui::Context) {
+    ctx.set_visuals(egui::Visuals::dark());
+
+    let mut fonts = egui::FontDefinitions::default();
+    egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
+    ctx.set_fonts(fonts);
 }

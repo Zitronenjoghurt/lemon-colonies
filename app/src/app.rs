@@ -1,7 +1,7 @@
 use crate::game::Game;
 use crate::http::Http;
 use crate::ui::state::UiState;
-use crate::ui::UiViewer;
+use crate::ui::{setup_egui, UiViewer};
 use crate::ws::Ws;
 use egui_macroquad::macroquad::color::BLACK;
 use egui_macroquad::macroquad::logging::{debug, info};
@@ -15,6 +15,7 @@ pub struct App {
     toasts: Toasts,
     ui: UiState,
     ws: Ws,
+    egui_initialized: bool,
 }
 
 impl App {
@@ -31,6 +32,7 @@ impl App {
             toasts: Toasts::new(),
             ui: UiState::default(),
             ws,
+            egui_initialized: false,
         })
     }
 
@@ -56,6 +58,10 @@ impl App {
 
     pub fn render_ui(&mut self) {
         egui_macroquad::ui(|ctx| {
+            if !self.egui_initialized {
+                setup_egui(ctx);
+                self.egui_initialized = true;
+            }
             let mut viewer = UiViewer {
                 game: &mut self.game,
                 http: &mut self.http,

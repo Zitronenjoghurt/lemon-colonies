@@ -7,6 +7,7 @@ pub struct Config {
     pub domain: String,
     pub integrations: IntegrationsConfig,
     pub session_secret: String,
+    pub chunk_batch_size: usize,
     pub max_chunk_subscription_area: i32,
 }
 
@@ -18,6 +19,9 @@ impl Config {
             domain: std::env::var("DOMAIN")?,
             integrations: IntegrationsConfig::from_env()?,
             session_secret: std::env::var("SESSION_SECRET")?,
+            chunk_batch_size: std::env::var("CHUNK_BATCH_SIZE")
+                .unwrap_or("100".to_string())
+                .parse::<usize>()?,
             max_chunk_subscription_area: std::env::var("MAX_CHUNK_SUBSCRIPTION_AREA")
                 .unwrap_or("1000".to_string())
                 .parse::<i32>()?,

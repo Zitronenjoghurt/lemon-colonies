@@ -73,7 +73,7 @@ impl WebsocketConnection {
     }
 
     async fn handle_chunk_subscription(&self, rect: Rect<i32>) -> ServerResult<()> {
-        if rect.area() > 1000 {
+        if rect.area() > self.state.config.max_chunk_subscription_area {
             return Ok(());
         }
 
@@ -94,7 +94,7 @@ impl WebsocketConnection {
             .map(|p| (p.x, p.y))
             .collect();
 
-        for batch in coords.chunks(100) {
+        for batch in coords.chunks(self.state.config.chunk_batch_size) {
             let chunks = self
                 .state
                 .data
