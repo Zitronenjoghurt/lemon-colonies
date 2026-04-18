@@ -30,8 +30,7 @@ impl ClientCamera {
 
         let scroll = mouse_wheel().1;
         if scroll != 0.0 {
-            let mouse_screen = vec2(mouse_position().0, mouse_position().1);
-            let before = self.camera.screen_to_world(mouse_screen);
+            let before = self.screen_to_world(mouse_screen_coords());
 
             self.zoom_level *= 1.05_f32.powf(scroll);
             self.zoom_level = self.zoom_level.clamp(MIN_ZOOM, MAX_ZOOM);
@@ -41,7 +40,7 @@ impl ClientCamera {
                 self.zoom_level / screen_height(),
             );
 
-            let after = self.camera.screen_to_world(mouse_screen);
+            let after = self.camera.screen_to_world(mouse_screen_coords());
             self.camera.target += before - after;
         }
 
@@ -88,4 +87,16 @@ impl ClientCamera {
             Point::new(max_cx, max_cy),
         )
     }
+
+    pub fn screen_to_world(&self, screen: Vec2) -> Vec2 {
+        self.camera.screen_to_world(screen)
+    }
+}
+
+pub fn mouse_screen_coords() -> Vec2 {
+    vec2(mouse_position().0, mouse_position().1)
+}
+
+pub fn world_to_chunk(world: Vec2) -> Vec2 {
+    (world / CHUNK_EDGE_PIXELS as f32).floor()
 }

@@ -1,3 +1,4 @@
+use crate::ui::widgets::profile_menu::ProfileMenu;
 use crate::ui::widgets::window_button::WindowButton;
 use crate::ui::windows::WindowId;
 use egui_macroquad::egui;
@@ -41,6 +42,10 @@ impl<'a> UiViewer<'a> {
             ui.separator();
             self.window_button(ui, WindowId::Settings);
             self.window_button(ui, WindowId::Debug);
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ProfileMenu::new(self.http).ui(ui);
+            });
         });
     }
 }
