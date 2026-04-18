@@ -4,12 +4,14 @@ use egui_macroquad::egui::Id;
 use strum_macros::EnumIter;
 
 mod debug;
+mod settings;
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize, EnumIter,
 )]
 pub enum WindowId {
     Debug,
+    Settings,
 }
 
 impl WindowId {
@@ -21,6 +23,7 @@ impl WindowId {
             .collapsible(self.collapsible())
             .show(ctx, |ui| match self {
                 WindowId::Debug => debug::show(viewer, ui),
+                WindowId::Settings => settings::show(viewer, ui),
             });
         if !open {
             viewer.state.toggle_window(*self);
@@ -30,12 +33,14 @@ impl WindowId {
     pub fn title(&self) -> &'static str {
         match self {
             WindowId::Debug => "Debug",
+            WindowId::Settings => "Settings",
         }
     }
 
     pub fn icon(&self) -> &'static str {
         match self {
             WindowId::Debug => icon::BUG,
+            WindowId::Settings => icon::GEAR,
         }
     }
 

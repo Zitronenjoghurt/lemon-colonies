@@ -6,6 +6,8 @@ mod app;
 mod bindings;
 mod game;
 mod http;
+mod settings;
+mod storage;
 mod ui;
 mod ws;
 

@@ -9,6 +9,7 @@ mod widgets;
 mod windows;
 
 pub struct UiViewer<'a> {
+    pub settings: &'a mut crate::settings::Settings,
     pub game: &'a mut crate::game::Game,
     pub http: &'a mut crate::http::Http,
     pub state: &'a mut state::UiState,
@@ -38,6 +39,7 @@ impl<'a> UiViewer<'a> {
         ui.horizontal(|ui| {
             ui.label("Lemon Colonies");
             ui.separator();
+            self.window_button(ui, WindowId::Settings);
             self.window_button(ui, WindowId::Debug);
         });
     }

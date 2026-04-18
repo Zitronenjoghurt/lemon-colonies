@@ -1,5 +1,6 @@
 use crate::game::Game;
 use crate::http::Http;
+use crate::settings::Settings;
 use crate::ui::state::UiState;
 use crate::ui::{setup_egui, UiViewer};
 use crate::ws::Ws;
@@ -10,6 +11,7 @@ use egui_notify::Toasts;
 use lemon_colonies_core::messages::server::ServerMessage;
 
 pub struct App {
+    settings: Settings,
     game: Game,
     http: Http,
     toasts: Toasts,
@@ -27,10 +29,11 @@ impl App {
         ws.connect();
 
         Ok(Self {
+            settings: Settings::load(),
             game: Game::load()?,
             http,
             toasts: Toasts::new(),
-            ui: UiState::default(),
+            ui: UiState::load(),
             ws,
             egui_initialized: false,
         })
@@ -48,6 +51,7 @@ impl App {
         self.render_ui();
         self.http.update(&mut self.toasts);
         self.update_ws();
+        self.ui.update();
     }
 
     pub fn render_game(&mut self) {
@@ -63,6 +67,7 @@ impl App {
                 self.egui_initialized = true;
             }
             let mut viewer = UiViewer {
+                settings: &mut self.settings,
                 game: &mut self.game,
                 http: &mut self.http,
                 state: &mut self.ui,
@@ -70,6 +75,7 @@ impl App {
                 ws: &mut self.ws,
             };
             viewer.show(ctx);
+            self.settings.apply(ctx);
         });
         egui_macroquad::draw();
     }
