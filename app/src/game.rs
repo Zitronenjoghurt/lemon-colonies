@@ -1,10 +1,13 @@
 use crate::game::atlas::AtlasStore;
-use crate::game::camera::ClientCamera;
+use crate::game::camera::{mouse_screen_coords, ClientCamera};
+use crate::game::sprite::{HasSprite, SpriteDraw};
 use crate::game::world::ClientWorld;
 use crate::ws::Ws;
+use egui_macroquad::macroquad::camera::set_default_camera;
 use egui_macroquad::macroquad::logging::debug;
-use egui_macroquad::macroquad::prelude::get_time;
+use egui_macroquad::macroquad::prelude::{get_time, Color};
 use lemon_colonies_core::game::chunk::Chunk;
+use lemon_colonies_core::game::object::{ObjectId, ObjectKind};
 use lemon_colonies_core::math::rect::Rect;
 
 pub mod atlas;
@@ -19,6 +22,7 @@ pub struct Game {
     atlas: AtlasStore,
     pub camera: ClientCamera,
     pub world: ClientWorld,
+    hover_object: Option<ObjectKind>,
     last_subscribed_rect: Option<Rect<i32>>,
     rect_dirty_since: Option<f64>,
 }
@@ -29,6 +33,7 @@ impl Game {
             atlas: AtlasStore::load()?,
             camera: Default::default(),
             world: Default::default(),
+            hover_object: Some(ObjectKind::Bush),
             last_subscribed_rect: None,
             rect_dirty_since: None,
         })
@@ -45,6 +50,7 @@ impl Game {
 
     pub fn draw(&mut self) {
         self.world.draw(&self.atlas, &self.camera);
+        self.draw_hover_object();
     }
 }
 
@@ -76,6 +82,24 @@ impl Game {
             self.world.set_colony_positions_pending();
             ws.request_colony_positions();
         }
+    }
+}
+
+// Rendering
+impl Game {
+    pub fn draw_hover_object(&self) {
+        let Some(object) = &self.hover_object else {
+            return;
+        };
+
+        self.camera.apply();
+
+        let mouse_world = self.camera.screen_to_world(mouse_screen_coords());
+        SpriteDraw::new(object.sprite(), mouse_world.floor())
+            .with_tint(Color::new(1.0, 1.0, 1.0, 0.5))
+            .draw(&self.atlas);
+
+        set_default_camera();
     }
 }
 

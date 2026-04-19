@@ -1,5 +1,7 @@
 use crate::error::{CoreError, CoreResult};
+use crate::game::object::{ObjectId, ObjectKind};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
+use std::collections::HashMap;
 use strum::EnumCount;
 
 pub const CHUNK_EDGE_LENGTH: usize = 32;
@@ -11,6 +13,7 @@ pub const CHUNK_SIZE: usize = CHUNK_EDGE_LENGTH * CHUNK_EDGE_LENGTH;
 pub struct Chunk {
     pub x: i32,
     pub y: i32,
+    pub objects: HashMap<ObjectId, ChunkObject>,
     pub terrain: [Terrain; CHUNK_SIZE],
 }
 
@@ -26,12 +29,25 @@ impl Chunk {
             Terrain::from_repr(random_repr).unwrap_or_default()
         });
 
-        Self { x, y, terrain }
+        Self {
+            x,
+            y,
+            objects: HashMap::new(),
+            terrain,
+        }
     }
 
     pub fn get_terrain(&self, x: usize, y: usize) -> Option<Terrain> {
         self.terrain.get(y * CHUNK_EDGE_LENGTH + x).copied()
     }
+}
+
+#[derive(Clone)]
+#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
+pub struct ChunkObject {
+    pub x: u8,
+    pub y: u8,
+    pub kind: ObjectKind,
 }
 
 #[cfg(feature = "data")]
@@ -54,6 +70,7 @@ impl TryFrom<crate::data::entity::chunk::Model> for Chunk {
             x: model.x,
             y: model.y,
             terrain,
+            objects: HashMap::new(),
         })
     }
 }

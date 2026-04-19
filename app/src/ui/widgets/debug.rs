@@ -15,9 +15,8 @@ impl<'a> DebugWidget<'a> {
 
 impl Widget for DebugWidget<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        Grid::new("debug_grid")
-            .num_columns(2)
-            .show(ui, |ui| {
+        ui.vertical(|ui| {
+            Grid::new("debug_info_grid").num_columns(2).show(ui, |ui| {
                 let mouse_screen = vec2(mouse_position().0, mouse_position().1);
                 ui.label("Mouse pos. (screen)");
                 ui.label(format!("({:.2}, {:.2})", mouse_screen.x, mouse_screen.y));
@@ -36,7 +35,18 @@ impl Widget for DebugWidget<'_> {
                 ui.label("Loaded chunks");
                 ui.label(self.game.world.chunk_count().to_string());
                 ui.end_row();
-            })
-            .response
+            });
+
+            ui.separator();
+
+            Grid::new("debug_action_grid")
+                .num_columns(2)
+                .show(ui, |ui| {
+                    ui.label("Display chunk borders");
+                    ui.checkbox(&mut self.game.world.display_chunk_borders, "");
+                    ui.end_row();
+                });
+        })
+        .response
     }
 }

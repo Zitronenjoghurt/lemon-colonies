@@ -1,19 +1,91 @@
-use crate::game::atlas::Atlas;
-use egui_macroquad::macroquad::prelude::Rect;
+use crate::game::atlas::{Atlas, AtlasStore};
+use egui_macroquad::macroquad::prelude::{
+    draw_texture_ex, vec2, Color, DrawTextureParams, Rect, Vec2, WHITE,
+};
+use lemon_colonies_core::game::object::ObjectKind;
 use lemon_colonies_core::game::terrain::Terrain;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sprite {
     pub atlas: Atlas,
     pub src: Rect,
+    pub pivot: Vec2,
+    pub y_sort_offset: f32,
 }
 
 impl Sprite {
+    pub const fn new(atlas: Atlas, src: Rect) -> Self {
+        Self {
+            atlas,
+            src,
+            pivot: vec2(src.w / 2.0, src.h),
+            y_sort_offset: 0.0,
+        }
+    }
+
     pub const fn from_grid(atlas: Atlas, x: u32, y: u32) -> Self {
         Self {
             atlas,
             src: Rect::new(x as f32 * 8.0, y as f32 * 8.0, 8.0, 8.0),
+            pivot: vec2(8.0 / 2.0, 8.0),
+            y_sort_offset: 0.0,
         }
+    }
+
+    pub const fn from_object(atlas: Atlas, x: f32, y: f32, object: &ObjectKind) -> Self {
+        Self {
+            atlas,
+            src: Rect::new(x, y, object.width(), object.height()),
+            pivot: vec2(object.pivot().0, object.pivot().1),
+            y_sort_offset: 0.0,
+        }
+    }
+
+    pub fn width(&self) -> f32 {
+        self.src.w
+    }
+
+    pub fn height(&self) -> f32 {
+        self.src.h
+    }
+}
+
+pub struct SpriteDraw {
+    pub sprite: Sprite,
+    pub anchor: Vec2,
+    pub sort_y: f32,
+    pub tint: Color,
+}
+
+impl SpriteDraw {
+    pub fn new(sprite: Sprite, anchor: Vec2) -> Self {
+        let sort_y = anchor.y + sprite.y_sort_offset;
+        Self {
+            sprite,
+            anchor,
+            sort_y,
+            tint: WHITE,
+        }
+    }
+
+    pub fn with_tint(mut self, tint: Color) -> Self {
+        self.tint = tint;
+        self
+    }
+
+    pub fn draw(&self, store: &AtlasStore) {
+        let pivot = self.sprite.pivot;
+        draw_texture_ex(
+            store.get(self.sprite.atlas),
+            self.anchor.x - pivot.x,
+            self.anchor.y - pivot.y,
+            self.tint,
+            DrawTextureParams {
+                source: Some(self.sprite.src),
+                dest_size: Some(vec2(self.sprite.width(), self.sprite.height())),
+                ..Default::default()
+            },
+        );
     }
 }
 
@@ -52,6 +124,14 @@ impl HasSprite for Terrain {
             Self::GrassShroomsBrownBig => Sprite::from_grid(Atlas::BaseOverworld, 1, 6),
             Self::GrassShroomsRedSmall => Sprite::from_grid(Atlas::BaseOverworld, 2, 6),
             Self::GrassShroomsBrownSmall => Sprite::from_grid(Atlas::BaseOverworld, 3, 6),
+        }
+    }
+}
+
+impl HasSprite for ObjectKind {
+    fn sprite(&self) -> Sprite {
+        match self {
+            Self::Bush => Sprite::from_object(Atlas::BaseOverworld, 3.0, 654.0, self),
         }
     }
 }
