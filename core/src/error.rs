@@ -17,6 +17,8 @@ pub enum CoreError {
     ParseInt(#[from] std::num::ParseIntError),
     #[error("Invalid chunk terrain size")]
     InvalidChunkTerrainSize,
+    #[error("Invalid object data")]
+    InvalidObjectData,
     #[error("Invalid terrain")]
     InvalidTerrain,
 }

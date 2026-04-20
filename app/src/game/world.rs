@@ -47,10 +47,10 @@ impl ClientWorld {
         for chunk in self.chunks.values() {
             for obj in chunk.chunk.objects.values() {
                 let world_pos = vec2(
-                    chunk.chunk.x as f32 * CHUNK_EDGE_PIXELS as f32,
-                    chunk.chunk.y as f32 * CHUNK_EDGE_PIXELS as f32,
+                    chunk.chunk.x as f32 * CHUNK_EDGE_PIXELS as f32 + obj.x as f32,
+                    chunk.chunk.y as f32 * CHUNK_EDGE_PIXELS as f32 + obj.y as f32,
                 );
-                objects.push(SpriteDraw::new(obj.kind.sprite(), world_pos));
+                objects.push(SpriteDraw::new(obj.data.sprite(), world_pos));
             }
         }
         objects.sort_by(|a, b| a.sort_y.partial_cmp(&b.sort_y).unwrap());

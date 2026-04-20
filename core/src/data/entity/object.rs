@@ -3,13 +3,17 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "colony")]
+#[sea_orm(table_name = "object")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
+    pub id: Uuid,
+    pub kind: i16,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub data: Json,
     pub chunk_x: i32,
-    #[sea_orm(primary_key, auto_increment = false)]
     pub chunk_y: i32,
-    pub user_id: Uuid,
+    pub x: i16,
+    pub y: i16,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -24,14 +28,6 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Chunk,
-    #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
-    User,
 }
 
 impl Related<super::chunk::Entity> for Entity {
@@ -40,18 +36,12 @@ impl Related<super::chunk::Entity> for Entity {
     }
 }
 
-impl Related<super::user::Entity> for Entity {
+impl Related<super::colony::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::User.def()
-    }
-}
-
-impl Related<super::object::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::chunk::Relation::Object.def()
+        super::chunk::Relation::Colony.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::chunk::Relation::Colony.def().rev())
+        Some(super::chunk::Relation::Object.def().rev())
     }
 }
 

@@ -18,4 +18,6 @@ pub enum ServerError {
     TokenRequest(String),
     #[error("Error parsing URL: {0}")]
     Url(#[from] url::ParseError),
+    #[error("Chunk not owned")]
+    ChunkNotOwned,
 }

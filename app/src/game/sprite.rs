@@ -2,7 +2,7 @@ use crate::game::atlas::{Atlas, AtlasStore};
 use egui_macroquad::macroquad::prelude::{
     draw_texture_ex, vec2, Color, DrawTextureParams, Rect, Vec2, WHITE,
 };
-use lemon_colonies_core::game::object::ObjectKind;
+use lemon_colonies_core::game::object::ObjectData;
 use lemon_colonies_core::game::terrain::Terrain;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -32,7 +32,7 @@ impl Sprite {
         }
     }
 
-    pub const fn from_object(atlas: Atlas, x: f32, y: f32, object: &ObjectKind) -> Self {
+    pub const fn from_object(atlas: Atlas, x: f32, y: f32, object: &ObjectData) -> Self {
         Self {
             atlas,
             src: Rect::new(x, y, object.width(), object.height()),
@@ -128,7 +128,7 @@ impl HasSprite for Terrain {
     }
 }
 
-impl HasSprite for ObjectKind {
+impl HasSprite for ObjectData {
     fn sprite(&self) -> Sprite {
         match self {
             Self::Bush => Sprite::from_object(Atlas::BaseOverworld, 3.0, 654.0, self),

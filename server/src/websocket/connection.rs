@@ -1,9 +1,12 @@
-use crate::error::ServerResult;
+use crate::error::{ServerError, ServerResult};
 use crate::state::ServerState;
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
+use lemon_colonies_core::data::entity::object;
+use lemon_colonies_core::data::store::Store;
 use lemon_colonies_core::math::rect::Rect;
+use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use tower_sessions_sqlx_store::sqlx::types::Uuid;
@@ -54,6 +57,9 @@ impl WebsocketConnection {
             ClientMessage::ColonyPositions => self.handle_colony_positions().await?,
             ClientMessage::Hello => self.respond(ServerMessage::Hello),
             ClientMessage::SubscribeToChunks(rect) => self.handle_chunk_subscription(rect).await?,
+            ClientMessage::ObjectPlacement(placement) => {
+                self.handle_object_placement(placement).await?
+            }
         };
         Ok(())
     }
@@ -107,6 +113,22 @@ impl WebsocketConnection {
             }
         }
 
+        Ok(())
+    }
+
+    // ToDo: Check object obstruction
+    async fn handle_object_placement(&self, placement: ObjectPlacement) -> ServerResult<()> {
+        let chunk_owned = self
+            .state
+            .service
+            .chunk
+            .does_user_own_chunk(self.user_id, placement.chunk.0, placement.chunk.1)
+            .await?;
+        if !chunk_owned {
+            return Err(ServerError::ChunkNotOwned);
+        };
+        let active = object::ActiveModel::try_from(placement)?;
+        self.state.data.object.insert(active).await?;
         Ok(())
     }
 }

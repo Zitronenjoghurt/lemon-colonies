@@ -31,6 +31,16 @@ impl MigrationTrait for Migration {
                             .to(User::Table, User::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from_tbl(Colony::Table)
+                            .from_col(Colony::ChunkX)
+                            .from_col(Colony::ChunkY)
+                            .to_tbl(Chunk::Table)
+                            .to_col(Chunk::X)
+                            .to_col(Chunk::Y)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -66,6 +76,13 @@ impl MigrationTrait for Migration {
 enum User {
     Table,
     Id,
+}
+
+#[derive(DeriveIden)]
+enum Chunk {
+    Table,
+    X,
+    Y,
 }
 
 #[derive(DeriveIden)]

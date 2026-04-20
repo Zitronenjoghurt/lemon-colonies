@@ -1,5 +1,6 @@
 use egui_macroquad::macroquad::time::get_time;
 use lemon_colonies_core::math::rect::Rect;
+use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use quad_net::web_socket::WebSocket;
@@ -88,6 +89,10 @@ impl Ws {
 
     pub fn request_colony_positions(&mut self) {
         self.send_bytes(&ClientMessage::ColonyPositions.as_bytes());
+    }
+
+    pub fn place_object(&mut self, placement: ObjectPlacement) {
+        self.send_bytes(&ClientMessage::ObjectPlacement(placement).as_bytes());
     }
 }
 

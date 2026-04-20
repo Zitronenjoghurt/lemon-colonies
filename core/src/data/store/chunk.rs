@@ -1,4 +1,4 @@
-use crate::data::entity::chunk;
+use crate::data::entity::{chunk, object};
 use crate::data::store::Store;
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
@@ -27,10 +27,13 @@ impl ChunkStore {
     }
 
     pub async fn load_existing(&self, x: i32, y: i32) -> CoreResult<Option<Chunk>> {
-        let Some(existing) = self.find_by_id((x, y)).await? else {
-            return Ok(None);
-        };
-        Ok(Some(Chunk::try_from(existing)?))
+        let row = chunk::Entity::find_by_id((x, y))
+            .find_with_related(object::Entity)
+            .all(self.db())
+            .await?
+            .into_iter()
+            .next();
+        row.map(Chunk::try_from).transpose()
     }
 
     pub async fn load_or_generate(&self, x: i32, y: i32, world_seed: u64) -> CoreResult<Chunk> {
@@ -50,13 +53,12 @@ impl ChunkStore {
         for &(x, y) in coords {
             condition = condition.add(chunk::Column::X.eq(x).and(chunk::Column::Y.eq(y)));
         }
-
-        let models = chunk::Entity::find()
+        let rows = chunk::Entity::find()
             .filter(condition)
+            .find_with_related(object::Entity)
             .all(self.db())
             .await?;
-
-        models.into_iter().map(Chunk::try_from).collect()
+        rows.into_iter().map(Chunk::try_from).collect()
     }
 
     pub async fn load_or_generate_many(

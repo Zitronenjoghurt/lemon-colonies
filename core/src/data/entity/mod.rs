@@ -4,4 +4,5 @@ pub mod prelude;
 
 pub mod chunk;
 pub mod colony;
+pub mod object;
 pub mod user;

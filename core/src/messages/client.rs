@@ -1,10 +1,14 @@
 use crate::error::CoreResult;
 use crate::math::rect::Rect;
+use object_placement::ObjectPlacement;
+
+pub mod object_placement;
 
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub enum ClientMessage {
     Hello,
     ColonyPositions,
+    ObjectPlacement(ObjectPlacement),
     SubscribeToChunks(Rect<i32>),
 }
 

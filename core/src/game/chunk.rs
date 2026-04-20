@@ -1,5 +1,5 @@
 use crate::error::{CoreError, CoreResult};
-use crate::game::object::{ObjectId, ObjectKind};
+use crate::game::object::{ObjectData, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
 use std::collections::HashMap;
 use strum::EnumCount;
@@ -47,7 +47,7 @@ impl Chunk {
 pub struct ChunkObject {
     pub x: u8,
     pub y: u8,
-    pub kind: ObjectKind,
+    pub data: ObjectData,
 }
 
 #[cfg(feature = "data")]
@@ -55,7 +55,26 @@ impl TryFrom<crate::data::entity::chunk::Model> for Chunk {
     type Error = CoreError;
 
     fn try_from(model: crate::data::entity::chunk::Model) -> CoreResult<Self> {
-        let terrain: [Terrain; CHUNK_SIZE] = model
+        Self::try_from((model, Vec::new()))
+    }
+}
+
+#[cfg(feature = "data")]
+impl
+    TryFrom<(
+        crate::data::entity::chunk::Model,
+        Vec<crate::data::entity::object::Model>,
+    )> for Chunk
+{
+    type Error = CoreError;
+
+    fn try_from(
+        (chunk, objects): (
+            crate::data::entity::chunk::Model,
+            Vec<crate::data::entity::object::Model>,
+        ),
+    ) -> CoreResult<Self> {
+        let terrain: [Terrain; CHUNK_SIZE] = chunk
             .terrain
             .chunks_exact(2)
             .map(|b| {
@@ -66,12 +85,35 @@ impl TryFrom<crate::data::entity::chunk::Model> for Chunk {
             .try_into()
             .map_err(|_| CoreError::InvalidChunkTerrainSize)?;
 
+        let objects = objects
+            .into_iter()
+            .map(<(ObjectId, ChunkObject)>::try_from)
+            .collect::<CoreResult<HashMap<_, _>>>()?;
+
         Ok(Self {
-            x: model.x,
-            y: model.y,
+            x: chunk.x,
+            y: chunk.y,
             terrain,
-            objects: HashMap::new(),
+            objects,
         })
+    }
+}
+
+#[cfg(feature = "data")]
+impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
+    type Error = CoreError;
+
+    fn try_from(model: crate::data::entity::object::Model) -> CoreResult<Self> {
+        let data: ObjectData =
+            serde_json::from_value(model.data).map_err(|_| CoreError::InvalidObjectData)?;
+        Ok((
+            ObjectId::from(model.id),
+            ChunkObject {
+                x: model.x as u8,
+                y: model.y as u8,
+                data,
+            },
+        ))
     }
 }
 

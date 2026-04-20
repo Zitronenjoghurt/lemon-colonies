@@ -27,18 +27,17 @@ pub struct Object {
     pub chunk_y: i32,
     pub x: u8,
     pub y: u8,
-    pub kind: ObjectKind,
+    pub data: ObjectData,
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, EnumCount)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum ObjectKind {
-    #[default]
+pub enum ObjectData {
     Bush,
 }
 
-impl ObjectKind {
+impl ObjectData {
     /// The width of this object in pixels
     pub const fn width(&self) -> f32 {
         match self {
@@ -55,5 +54,27 @@ impl ObjectKind {
 
     pub const fn pivot(&self) -> (f32, f32) {
         (self.width() / 2.0, self.height())
+    }
+
+    pub const fn kind(&self) -> ObjectKind {
+        match self {
+            Self::Bush => ObjectKind::Bush,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
+#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[repr(u16)]
+pub enum ObjectKind {
+    Bush,
+}
+
+impl ObjectKind {
+    pub const fn default_data(&self) -> ObjectData {
+        match self {
+            Self::Bush => ObjectData::Bush,
+        }
     }
 }
