@@ -58,6 +58,17 @@ impl ObjectData {
         (self.width() / 2.0, self.height())
     }
 
+    pub const fn center(&self) -> (f32, f32) {
+        (self.width() / 2.0, self.height() / 2.0)
+    }
+
+    pub const fn pivot_center_offset(&self) -> (f32, f32) {
+        (
+            self.pivot().0 - self.center().0,
+            self.pivot().1 - self.center().1,
+        )
+    }
+
     pub const fn kind(&self) -> ObjectKind {
         match self {
             Self::Bush => ObjectKind::Bush,

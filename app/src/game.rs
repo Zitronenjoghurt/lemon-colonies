@@ -1,13 +1,13 @@
 use crate::game::atlas::AtlasStore;
-use crate::game::camera::{mouse_screen_coords, world_to_chunk, world_to_tile, ClientCamera};
+use crate::game::camera::{mouse_screen_coords, world_to_chunk, ClientCamera};
 use crate::game::sprite::{HasSprite, SpriteDraw};
 use crate::game::world::ClientWorld;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::camera::set_default_camera;
-use egui_macroquad::macroquad::input::{is_mouse_button_pressed, is_mouse_button_released};
+use egui_macroquad::macroquad::input::is_mouse_button_pressed;
 use egui_macroquad::macroquad::logging::debug;
-use egui_macroquad::macroquad::prelude::{get_time, Color, MouseButton};
-use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_LENGTH};
+use egui_macroquad::macroquad::prelude::{get_time, vec2, Color, MouseButton};
+use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::ObjectData;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
@@ -96,14 +96,21 @@ impl Game {
             return;
         };
 
-        let mouse_world = self.camera.screen_to_world(mouse_screen_coords()).floor();
-        let mouse_chunk = world_to_chunk(mouse_world);
-        let mouse_tile = world_to_tile(mouse_world);
+        let mouse_world = self.camera.screen_to_world(mouse_screen_coords());
 
-        let chunk = (mouse_chunk.x as i32, mouse_chunk.y as i32);
+        let offset = data.pivot_center_offset();
+        let world_coords = (mouse_world.floor() + vec2(offset.0, offset.1));
+        let chunk_coords = world_to_chunk(world_coords);
+
+        let chunk = (chunk_coords.x as i32, chunk_coords.y as i32);
         let position = (
-            (mouse_tile.x as i32).rem_euclid(CHUNK_EDGE_LENGTH as i32) as u8,
-            (mouse_tile.y as i32).rem_euclid(CHUNK_EDGE_LENGTH as i32) as u8,
+            (world_coords.x as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
+            (world_coords.y as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
+        );
+
+        debug!(
+            "Tried to place object at {:?} in chunk {:?} (mouse world: {})",
+            position, chunk, mouse_world
         );
 
         ws.place_object(ObjectPlacement {
@@ -124,7 +131,9 @@ impl Game {
         self.camera.apply();
 
         let mouse_world = self.camera.screen_to_world(mouse_screen_coords());
-        SpriteDraw::new(object.sprite(), mouse_world.floor())
+        let offset = object.pivot_center_offset();
+        let anchor = mouse_world.floor() + vec2(offset.0, offset.1);
+        SpriteDraw::new(object.sprite(), anchor)
             .with_tint(Color::new(1.0, 1.0, 1.0, 0.5))
             .draw(&self.atlas);
 

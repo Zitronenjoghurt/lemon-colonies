@@ -1,6 +1,5 @@
 use egui_macroquad::macroquad::prelude::*;
 use lemon_colonies_core::game::chunk::CHUNK_EDGE_PIXELS;
-use lemon_colonies_core::game::terrain::TERRAIN_SIZE;
 use lemon_colonies_core::math::point::Point;
 
 const MIN_ZOOM: f32 = 1.0;
@@ -100,12 +99,4 @@ pub fn mouse_screen_coords() -> Vec2 {
 
 pub fn world_to_chunk(world: Vec2) -> Vec2 {
     (world / CHUNK_EDGE_PIXELS as f32).floor()
-}
-
-pub fn world_to_tile(world: Vec2) -> Vec2 {
-    (world / TERRAIN_SIZE as f32).floor()
-}
-
-pub fn tile_to_world(tile: Vec2) -> Vec2 {
-    tile * TERRAIN_SIZE as f32
 }
