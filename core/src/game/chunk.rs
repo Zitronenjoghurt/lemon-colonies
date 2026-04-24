@@ -1,5 +1,5 @@
 use crate::error::{CoreError, CoreResult};
-use crate::game::object::{ObjectData, ObjectId};
+use crate::game::object::{Object, ObjectData, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
 use std::collections::HashMap;
 use strum::EnumCount;
@@ -39,6 +39,23 @@ impl Chunk {
 
     pub fn get_terrain(&self, x: usize, y: usize) -> Option<Terrain> {
         self.terrain.get(y * CHUNK_EDGE_LENGTH + x).copied()
+    }
+
+    pub fn update_object(&mut self, object: Object) {
+        if let Some(obj) = self.objects.get_mut(&object.id) {
+            obj.x = object.x;
+            obj.y = object.y;
+            obj.data = object.data;
+        } else {
+            self.objects.insert(
+                object.id,
+                ChunkObject {
+                    x: object.x,
+                    y: object.y,
+                    data: object.data,
+                },
+            );
+        }
     }
 }
 
@@ -96,24 +113,6 @@ impl
             terrain,
             objects,
         })
-    }
-}
-
-#[cfg(feature = "data")]
-impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
-    type Error = CoreError;
-
-    fn try_from(model: crate::data::entity::object::Model) -> CoreResult<Self> {
-        let data: ObjectData =
-            serde_json::from_value(model.data).map_err(|_| CoreError::InvalidObjectData)?;
-        Ok((
-            ObjectId::from(model.id),
-            ChunkObject {
-                x: model.x as u8,
-                y: model.y as u8,
-                data,
-            },
-        ))
     }
 }
 

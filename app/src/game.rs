@@ -11,6 +11,7 @@ use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_LENGTH};
 use lemon_colonies_core::game::object::ObjectData;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
+use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdateKind, ChunkUpdateMessage};
 
 pub mod atlas;
 pub mod camera;
@@ -139,5 +140,11 @@ impl Game {
 
     pub fn handle_colony_positions(&mut self, positions: &Vec<(i32, i32)>) {
         self.world.insert_colony_positions(positions)
+    }
+
+    pub fn handle_chunk_update(&mut self, update: ChunkUpdateMessage) {
+        match update.kind {
+            ChunkUpdateKind::UpdateObject(object) => self.world.update_object(object),
+        }
     }
 }

@@ -101,6 +101,10 @@ impl App {
                 debug!("Received {} colony positions", positions.len());
                 self.game.handle_colony_positions(&positions);
             }
+            ServerMessage::ChunkUpdate(update) => {
+                debug!("Received chunk update: {:?}", update);
+                self.game.handle_chunk_update(update);
+            }
         }
     }
 }

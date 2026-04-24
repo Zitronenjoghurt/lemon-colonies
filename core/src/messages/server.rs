@@ -1,12 +1,15 @@
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
 
+pub mod chunk_update;
+
 #[derive(Clone)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub enum ServerMessage {
     Hello,
     ColonyPositions(Vec<(i32, i32)>),
     Chunks(Vec<Chunk>),
+    ChunkUpdate(chunk_update::ChunkUpdateMessage),
 }
 
 impl ServerMessage {

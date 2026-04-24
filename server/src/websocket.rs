@@ -1,6 +1,6 @@
 use crate::api::error::{ApiError, ApiResult};
 use crate::state::ServerState;
-use crate::websocket::connection::WebsocketConnection;
+use crate::websocket::connection::{ConnectionId, WebsocketConnection};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::response::IntoResponse;
@@ -8,67 +8,112 @@ use dashmap::DashMap;
 use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use lemon_colonies_core::data::store::Store;
+use lemon_colonies_core::math::point::Point;
 use lemon_colonies_core::math::rect::Rect;
+use lemon_colonies_core::messages::server::chunk_update::ChunkUpdateMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
-use tokio::sync::broadcast;
+use std::collections::HashSet;
+use tokio::sync::mpsc;
 use tower_sessions::Session;
-use tower_sessions_sqlx_store::sqlx::types::Uuid;
 use tracing::{error, info};
+use uuid::Uuid;
 
 mod chunk_subscriptions;
 mod connection;
 
 #[derive(Default)]
 pub struct Websocket {
-    connections: DashMap<Uuid, broadcast::Sender<ServerMessage>>,
+    connections: DashMap<ConnectionId, (Uuid, mpsc::Sender<ServerMessage>)>,
+    users: DashMap<Uuid, HashSet<ConnectionId>>,
     chunk_subscriptions: chunk_subscriptions::ChunkSubscriptions,
 }
 
 impl Websocket {
-    pub fn subscribe(&self, user_id: Uuid) -> broadcast::Receiver<ServerMessage> {
-        let tx = self
-            .connections
-            .entry(user_id)
-            .or_insert_with(|| broadcast::channel(100).0);
+    pub fn register(&self, user_id: Uuid) -> (ConnectionId, mpsc::Receiver<ServerMessage>) {
+        let connection_id = Uuid::new_v4();
+        let (tx, rx) = mpsc::channel(100);
+        self.connections.insert(connection_id, (user_id, tx));
 
-        info!(
-            "User '{user_id}' connected. Active connections: {}",
-            tx.receiver_count() + 1
-        );
-        tx.subscribe()
-    }
-
-    pub fn unregister_if_empty(&self, user_id: Uuid) {
-        let should_remove = if let Some(tx) = self.connections.get(&user_id) {
-            tx.receiver_count() == 0
-        } else {
-            false
+        let count = {
+            let mut entry = self.users.entry(user_id).or_default();
+            entry.insert(connection_id);
+            entry.len()
         };
 
-        if should_remove {
-            self.disconnect_user(user_id);
+        info!("User '{user_id}' connected ({connection_id}). Active connections for user: {count}");
+        (connection_id, rx)
+    }
+
+    pub fn unregister(&self, connection_id: ConnectionId) {
+        let Some((_, (user_id, _))) = self.connections.remove(&connection_id) else {
+            return;
+        };
+
+        info!("Connection '{connection_id}' of user '{user_id}' closed.");
+
+        let user_empty = {
+            let Some(mut entry) = self.users.get_mut(&user_id) else {
+                return;
+            };
+            entry.remove(&connection_id);
+            entry.is_empty()
+        };
+
+        if user_empty {
+            self.users.remove(&user_id);
+            self.chunk_subscriptions.unsubscribe(connection_id);
+            info!("All connections closed for '{}'.", user_id);
         }
     }
 
+    pub fn send_to_connection(&self, connection_id: ConnectionId, message: ServerMessage) {
+        let Some(conn) = self.connections.get(&connection_id) else {
+            return;
+        };
+        let _ = conn.1.try_send(message);
+    }
+
     pub fn send_to_user(&self, user_id: Uuid, message: ServerMessage) {
-        if let Some(tx) = self.connections.get(&user_id) {
-            let _ = tx.send(message);
+        let Some(connection_ids) = self.users.get(&user_id) else {
+            return;
+        };
+
+        if connection_ids.len() == 1 {
+            let Some(conn) = self.connections.get(connection_ids.iter().next().unwrap()) else {
+                return;
+            };
+            let _ = conn.1.try_send(message);
+        } else {
+            for connection_id in connection_ids.iter() {
+                let Some(conn) = self.connections.get(connection_id) else {
+                    continue;
+                };
+                let _ = conn.1.try_send(message.clone());
+            }
         }
     }
 
     pub fn is_user_connected(&self, user_id: Uuid) -> bool {
-        self.connections.contains_key(&user_id)
+        self.users.contains_key(&user_id)
     }
 
     /// Returns the previous rect if there is one.
-    pub fn subscribe_to_chunks(&self, user_id: Uuid, rect: Rect<i32>) -> Option<Rect<i32>> {
-        self.chunk_subscriptions.subscribe(user_id, rect)
+    pub fn subscribe_to_chunks(&self, connection_id: Uuid, rect: Rect<i32>) -> Option<Rect<i32>> {
+        self.chunk_subscriptions.subscribe(connection_id, rect)
     }
 
-    fn disconnect_user(&self, user_id: Uuid) {
-        self.connections.remove(&user_id);
-        self.chunk_subscriptions.unsubscribe(user_id);
-        info!("All connections closed for '{user_id}'.");
+    pub fn send_chunk_update(&self, update: ChunkUpdateMessage) {
+        let coords = Point::new(update.coords.0, update.coords.1);
+        let connections = self.chunk_subscriptions.connections_for_chunk(&coords);
+
+        if connections.len() == 1 {
+            let connection_id = connections.first().unwrap();
+            self.send_to_connection(*connection_id, ServerMessage::ChunkUpdate(update))
+        } else {
+            for connection_id in self.chunk_subscriptions.connections_for_chunk(&coords) {
+                self.send_to_connection(connection_id, ServerMessage::ChunkUpdate(update.clone()))
+            }
+        }
     }
 }
 
@@ -90,41 +135,31 @@ pub async fn ws_handler(
 
 async fn handle_socket(socket: WebSocket, state: ServerState, user_id: Uuid) {
     let (ws_send, ws_receive) = socket.split();
-    let rx = state.ws.subscribe(user_id);
+    let (connection_id, rx) = state.ws.register(user_id);
 
     let state_clone = state.clone();
     let send_fut = handle_send(user_id, ws_send, rx);
-    let recv_fut = WebsocketConnection::new(user_id, state_clone).handle_receive(ws_receive);
+    let recv_fut =
+        WebsocketConnection::new(connection_id, user_id, state_clone).handle_receive(ws_receive);
 
     tokio::select! {
         _ = send_fut => {}
         _ = recv_fut => {}
     }
 
-    state.ws.unregister_if_empty(user_id);
+    state.ws.unregister(connection_id);
 }
 
 async fn handle_send(
-    user_id: Uuid,
+    connection_id: ConnectionId,
     mut ws_send: SplitSink<WebSocket, Message>,
-    mut rx: broadcast::Receiver<ServerMessage>,
+    mut rx: mpsc::Receiver<ServerMessage>,
 ) {
-    loop {
-        match rx.recv().await {
-            Ok(message) => {
-                let encoded = message.as_bytes();
-                if let Err(err) = ws_send.send(Message::binary(encoded)).await {
-                    error!("[{user_id}] Failed to send message: {err}");
-                    break;
-                }
-            }
-            Err(broadcast::error::RecvError::Lagged(count)) => {
-                error!("[{user_id}] Connection lagging! Missed {count} messages.");
-            }
-            Err(broadcast::error::RecvError::Closed) => {
-                error!("[{user_id}] One connection closed.");
-                break;
-            }
+    while let Some(message) = rx.recv().await {
+        let encoded = message.as_bytes();
+        if let Err(err) = ws_send.send(Message::binary(encoded)).await {
+            error!("[{connection_id}] Failed to send message: {err}");
+            break;
         }
     }
 }

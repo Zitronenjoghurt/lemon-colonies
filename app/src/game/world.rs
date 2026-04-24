@@ -4,6 +4,7 @@ use crate::game::chunk::ClientChunk;
 use crate::game::sprite::{HasSprite, SpriteDraw};
 use egui_macroquad::macroquad::prelude::*;
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
+use lemon_colonies_core::game::object::Object;
 use std::collections::HashMap;
 
 const CHUNK_RETAIN_PADDING: i32 = 20;
@@ -111,5 +112,12 @@ impl ClientWorld {
 
     pub fn set_colony_positions_pending(&mut self) {
         self.colony_positions_pending = true;
+    }
+
+    pub fn update_object(&mut self, object: Object) {
+        let Some(chunk) = self.chunks.get_mut(&(object.chunk_x, object.chunk_y)) else {
+            return;
+        };
+        chunk.update_object(object);
     }
 }

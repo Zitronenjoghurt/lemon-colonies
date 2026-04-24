@@ -1,3 +1,5 @@
+use crate::error::{CoreError, CoreResult};
+use crate::game::chunk::ChunkObject;
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 use uuid::Uuid;
 
@@ -76,5 +78,41 @@ impl ObjectKind {
         match self {
             Self::Bush => ObjectData::Bush,
         }
+    }
+}
+
+#[cfg(feature = "data")]
+impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
+    type Error = CoreError;
+
+    fn try_from(model: crate::data::entity::object::Model) -> CoreResult<Self> {
+        let data: ObjectData =
+            serde_json::from_value(model.data).map_err(|_| CoreError::InvalidObjectData)?;
+        Ok((
+            ObjectId::from(model.id),
+            ChunkObject {
+                x: model.x as u8,
+                y: model.y as u8,
+                data,
+            },
+        ))
+    }
+}
+
+#[cfg(feature = "data")]
+impl TryFrom<crate::data::entity::object::Model> for Object {
+    type Error = CoreError;
+
+    fn try_from(model: crate::data::entity::object::Model) -> CoreResult<Self> {
+        let data: ObjectData =
+            serde_json::from_value(model.data).map_err(|_| CoreError::InvalidObjectData)?;
+        Ok(Object {
+            id: ObjectId::from(model.id),
+            chunk_x: model.chunk_x,
+            chunk_y: model.chunk_y,
+            x: model.x as u8,
+            y: model.y as u8,
+            data,
+        })
     }
 }

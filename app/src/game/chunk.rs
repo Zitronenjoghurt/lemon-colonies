@@ -2,6 +2,7 @@ use crate::game::atlas::AtlasStore;
 use crate::game::sprite::HasSprite;
 use egui_macroquad::macroquad::prelude::*;
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_LENGTH};
+use lemon_colonies_core::game::object::Object;
 use lemon_colonies_core::game::terrain::TERRAIN_SIZE;
 
 const TEXTURE_SIZE: u32 = TERRAIN_SIZE as u32 * CHUNK_EDGE_LENGTH as u32;
@@ -66,5 +67,9 @@ impl ClientChunk {
                 ..Default::default()
             },
         );
+    }
+
+    pub fn update_object(&mut self, object: Object) {
+        self.chunk.update_object(object);
     }
 }
