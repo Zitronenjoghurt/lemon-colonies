@@ -5,6 +5,8 @@ use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use quad_net::web_socket::WebSocket;
 
+pub mod fetchable;
+
 #[derive(Default)]
 pub struct Ws {
     state: WsState,

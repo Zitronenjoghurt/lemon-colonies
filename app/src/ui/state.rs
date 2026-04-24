@@ -7,6 +7,8 @@ pub struct UiState {
     windows: HashSet<WindowId>,
     #[serde(skip, default)]
     last_save: f64,
+    #[serde(skip, default)]
+    pub wants_pointer: bool,
 }
 
 impl UiState {

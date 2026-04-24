@@ -55,9 +55,9 @@ impl App {
     }
 
     pub fn render_game(&mut self) {
-        self.game.update(&mut self.ws);
+        self.game.update(&mut self.ws, self.ui.wants_pointer);
         clear_background(BLACK);
-        self.game.draw();
+        self.game.draw(&self.settings);
     }
 
     pub fn render_ui(&mut self) {
@@ -76,6 +76,7 @@ impl App {
             };
             viewer.show(ctx);
             self.settings.apply(ctx);
+            self.ui.wants_pointer = ctx.is_pointer_over_area();
         });
         egui_macroquad::draw();
     }
@@ -99,7 +100,7 @@ impl App {
             }
             ServerMessage::ColonyPositions(positions) => {
                 debug!("Received {} colony positions", positions.len());
-                self.game.handle_colony_positions(&positions);
+                self.game.handle_colony_positions(positions);
             }
             ServerMessage::ChunkUpdate(update) => {
                 debug!("Received chunk update: {:?}", update);

@@ -4,6 +4,7 @@ use egui_macroquad::egui;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Settings {
     pub ui_scale: f32,
+    pub display_chunk_borders: bool,
     #[serde(skip, default = "default_true")]
     pub dirty: bool,
 }
@@ -12,6 +13,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             ui_scale: Self::DEFAULT_UI_SCALE,
+            display_chunk_borders: false,
             dirty: true,
         }
     }

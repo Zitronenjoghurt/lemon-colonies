@@ -1,15 +1,17 @@
 use crate::game::camera::world_to_chunk;
 use crate::game::Game;
+use crate::settings::Settings;
 use egui_macroquad::egui::{Grid, Response, Ui, Widget};
-use egui_macroquad::macroquad::prelude::{mouse_position, vec2};
+use egui_macroquad::macroquad::prelude::{get_fps, mouse_position, vec2};
 
 pub struct DebugWidget<'a> {
     pub game: &'a mut Game,
+    pub settings: &'a mut Settings,
 }
 
 impl<'a> DebugWidget<'a> {
-    pub fn new(game: &'a mut Game) -> Self {
-        Self { game }
+    pub fn new(game: &'a mut Game, settings: &'a mut Settings) -> Self {
+        Self { game, settings }
     }
 }
 
@@ -17,6 +19,10 @@ impl Widget for DebugWidget<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.vertical(|ui| {
             Grid::new("debug_info_grid").num_columns(2).show(ui, |ui| {
+                ui.label("FPS");
+                ui.label(get_fps().to_string());
+                ui.end_row();
+
                 let mouse_screen = vec2(mouse_position().0, mouse_position().1);
                 ui.label("Mouse pos. (screen)");
                 ui.label(format!("({:.2}, {:.2})", mouse_screen.x, mouse_screen.y));
@@ -43,7 +49,7 @@ impl Widget for DebugWidget<'_> {
                 .num_columns(2)
                 .show(ui, |ui| {
                     ui.label("Display chunk borders");
-                    ui.checkbox(&mut self.game.world.display_chunk_borders, "");
+                    ui.checkbox(&mut self.settings.display_chunk_borders, "");
                     ui.end_row();
                 });
         })

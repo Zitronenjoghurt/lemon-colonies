@@ -1,7 +1,9 @@
 use crate::game::atlas::AtlasStore;
 use crate::game::camera::{mouse_screen_coords, world_to_chunk, ClientCamera};
+use crate::game::data::ClientData;
 use crate::game::sprite::{HasSprite, SpriteDraw};
 use crate::game::world::ClientWorld;
+use crate::settings::Settings;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::camera::set_default_camera;
 use egui_macroquad::macroquad::input::is_mouse_button_pressed;
@@ -16,6 +18,7 @@ use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdateKind, Chunk
 pub mod atlas;
 pub mod camera;
 mod chunk;
+mod data;
 pub mod sprite;
 mod world;
 
@@ -24,6 +27,7 @@ const CHUNK_SUBSCRIBE_DEBOUNCE_SECS: f64 = 0.2;
 pub struct Game {
     atlas: AtlasStore,
     pub camera: ClientCamera,
+    pub data: ClientData,
     pub world: ClientWorld,
     object_to_place: Option<ObjectData>,
     last_subscribed_rect: Option<Rect<i32>>,
@@ -35,6 +39,7 @@ impl Game {
         Ok(Self {
             atlas: AtlasStore::load()?,
             camera: Default::default(),
+            data: Default::default(),
             world: Default::default(),
             object_to_place: Some(ObjectData::Bush),
             last_subscribed_rect: None,
@@ -42,18 +47,21 @@ impl Game {
         })
     }
 
-    pub fn update(&mut self, ws: &mut Ws) {
+    pub fn update(&mut self, ws: &mut Ws, pointer_consumed: bool) {
         self.camera.update();
 
         if ws.is_connected() {
-            self.request_colony_positions(ws);
+            self.data.update(ws);
             self.update_chunk_subscription(ws);
-            self.handle_object_placement_input(ws);
+
+            if !pointer_consumed {
+                self.handle_object_placement_input(ws);
+            }
         }
     }
 
-    pub fn draw(&mut self) {
-        self.world.draw(&self.atlas, &self.camera);
+    pub fn draw(&mut self, settings: &Settings) {
+        self.world.draw(&self.atlas, &self.camera, settings);
         self.draw_object_to_place();
     }
 }
@@ -79,13 +87,6 @@ impl Game {
         self.rect_dirty_since = None;
         ws.subscribe_chunks(rect);
         self.world.unload_distant_chunks(rect);
-    }
-
-    pub fn request_colony_positions(&mut self, ws: &mut Ws) {
-        if self.world.should_request_colony_positions() {
-            self.world.set_colony_positions_pending();
-            ws.request_colony_positions();
-        }
     }
 
     pub fn handle_object_placement_input(&mut self, ws: &mut Ws) {
@@ -147,8 +148,8 @@ impl Game {
         self.world.insert_chunks(chunks);
     }
 
-    pub fn handle_colony_positions(&mut self, positions: &Vec<(i32, i32)>) {
-        self.world.insert_colony_positions(positions)
+    pub fn handle_colony_positions(&mut self, positions: Vec<(i32, i32)>) {
+        self.data.colony_positions.set_value(positions);
     }
 
     pub fn handle_chunk_update(&mut self, update: ChunkUpdateMessage) {

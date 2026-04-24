@@ -2,6 +2,7 @@ use crate::game::atlas::AtlasStore;
 use crate::game::camera::ClientCamera;
 use crate::game::chunk::ClientChunk;
 use crate::game::sprite::{HasSprite, SpriteDraw};
+use crate::settings::Settings;
 use egui_macroquad::macroquad::prelude::*;
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::Object;
@@ -13,9 +14,6 @@ const CHUNK_BORDER_THICKNESS: f32 = 1.0;
 #[derive(Default)]
 pub struct ClientWorld {
     chunks: HashMap<(i32, i32), ClientChunk>,
-    colony_positions: Vec<(i32, i32)>,
-    colony_positions_pending: bool,
-    pub display_chunk_borders: bool,
 }
 
 impl ClientWorld {
@@ -25,14 +23,14 @@ impl ClientWorld {
         }
     }
 
-    pub fn draw(&mut self, store: &AtlasStore, camera: &ClientCamera) {
+    pub fn draw(&mut self, store: &AtlasStore, camera: &ClientCamera, settings: &Settings) {
         self.rebuild(store);
 
         camera.apply();
 
         self.draw_chunks();
         self.draw_objects(store);
-        self.draw_chunk_grid();
+        self.draw_chunk_grid(settings);
 
         set_default_camera();
     }
@@ -60,8 +58,8 @@ impl ClientWorld {
         }
     }
 
-    fn draw_chunk_grid(&self) {
-        if !self.display_chunk_borders {
+    fn draw_chunk_grid(&self, settings: &Settings) {
+        if !settings.display_chunk_borders {
             return;
         }
 
@@ -100,18 +98,6 @@ impl ClientWorld {
 
     pub fn chunk_count(&self) -> usize {
         self.chunks.len()
-    }
-    pub fn insert_colony_positions(&mut self, positions: &Vec<(i32, i32)>) {
-        self.colony_positions_pending = false;
-        self.colony_positions.extend(positions);
-    }
-
-    pub fn should_request_colony_positions(&self) -> bool {
-        !self.colony_positions_pending && self.colony_positions.is_empty()
-    }
-
-    pub fn set_colony_positions_pending(&mut self) {
-        self.colony_positions_pending = true;
     }
 
     pub fn update_object(&mut self, object: Object) {
