@@ -20,4 +20,15 @@ pub enum ServerError {
     Url(#[from] url::ParseError),
     #[error("Chunk not owned")]
     ChunkNotOwned,
+    #[error("Unauthorized")]
+    Unauthorized,
+}
+
+impl ServerError {
+    pub fn is_user_error(&self) -> bool {
+        match self {
+            Self::ChunkNotOwned | Self::Unauthorized => true,
+            _ => false,
+        }
+    }
 }

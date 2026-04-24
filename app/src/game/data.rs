@@ -1,8 +1,10 @@
 use crate::ws::fetchable::Fetchable;
+use lemon_colonies_core::types::user_info::PrivateUserInfo;
 
 #[derive(Default)]
 pub struct ClientData {
     pub colony_positions: Fetchable<Vec<(i32, i32)>>,
+    pub user_info: Fetchable<PrivateUserInfo>,
 }
 
 impl ClientData {
@@ -10,6 +12,11 @@ impl ClientData {
         if self.colony_positions.needs_fetch() {
             self.colony_positions.set_pending();
             ws.request_colony_positions();
+        }
+
+        if self.user_info.needs_fetch() {
+            self.user_info.set_pending();
+            ws.request_user_info();
         }
     }
 }

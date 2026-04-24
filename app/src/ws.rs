@@ -96,6 +96,10 @@ impl Ws {
     pub fn place_object(&mut self, placement: ObjectPlacement) {
         self.send_bytes(&ClientMessage::ObjectPlacement(placement).as_bytes());
     }
+
+    pub fn request_user_info(&mut self) {
+        self.send_bytes(&ClientMessage::UserInfo.as_bytes());
+    }
 }
 
 #[derive(Default)]

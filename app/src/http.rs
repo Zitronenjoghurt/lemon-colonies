@@ -1,33 +1,19 @@
 use crate::bindings;
-use lemon_colonies_core::types::user_info::PrivateUserInfo;
 use quad_net::http_request::{Method, Request, RequestBuilder};
 use serde::de::DeserializeOwned;
 
 #[derive(Default)]
 pub struct Http {
-    pub me: RequestState<PrivateUserInfo>,
     pub logout: RequestState<()>,
 }
 
 impl Http {
-    pub fn on_start(&mut self) {
-        self.fetch_me();
-    }
-
     pub fn update(&mut self, toasts: &mut egui_notify::Toasts) {
-        self.me.poll_json(toasts);
         self.logout.poll_one_off(toasts);
 
         if let RequestState::Success(_) = self.logout {
             self.logout = RequestState::Idle;
             bindings::reload();
-        }
-    }
-
-    pub fn fetch_me(&mut self) {
-        if matches!(self.me, RequestState::Idle | RequestState::Error(_)) {
-            let req = RequestBuilder::new("/api/me").method(Method::Get).send();
-            self.me = RequestState::Loading(req);
         }
     }
 

@@ -10,6 +10,7 @@ pub enum ClientMessage {
     ColonyPositions,
     ObjectPlacement(ObjectPlacement),
     SubscribeToChunks(Rect<i32>),
+    UserInfo,
 }
 
 impl ClientMessage {

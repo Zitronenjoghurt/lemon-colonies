@@ -33,10 +33,14 @@ impl WebsocketConnection {
                 Message::Binary(data) => match ClientMessage::from_bytes(data.as_ref()) {
                     Ok(message) => {
                         if let Err(err) = self.handle_client_message(message).await {
-                            error!(
-                                "[{}] An error occurred on message handling: {err}",
-                                self.user_id
-                            );
+                            if err.is_user_error() {
+                                self.respond(ServerMessage::Error(err.to_string()));
+                            } else {
+                                error!(
+                                    "[{}] An error occurred on message handling: {err}",
+                                    self.user_id
+                                );
+                            }
                         }
                     }
                     Err(e) => {
@@ -65,6 +69,7 @@ impl WebsocketConnection {
             ClientMessage::ObjectPlacement(placement) => {
                 self.handle_object_placement(placement).await?
             }
+            ClientMessage::UserInfo => self.handle_user_info().await?,
         };
         Ok(())
     }
@@ -140,6 +145,18 @@ impl WebsocketConnection {
         let object = Object::try_from(object_model)?;
         let chunk_update = ChunkUpdateMessage::update_object(chunk_coords, object);
         self.state.ws.send_chunk_update(chunk_update);
+
+        Ok(())
+    }
+
+    async fn handle_user_info(&self) -> ServerResult<()> {
+        let Some(user) = self.state.data.user.find_by_id(self.user_id).await? else {
+            return Err(ServerError::Unauthorized);
+        };
+
+        self.respond(ServerMessage::UserInfo(
+            self.state.service.user.private_info(&user),
+        ));
 
         Ok(())
     }

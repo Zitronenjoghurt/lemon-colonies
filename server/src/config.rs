@@ -9,6 +9,7 @@ pub struct Config {
     pub session_secret: String,
     pub chunk_batch_size: usize,
     pub max_chunk_subscription_area: i32,
+    pub max_user_connection_count: usize,
 }
 
 impl Config {
@@ -25,6 +26,9 @@ impl Config {
             max_chunk_subscription_area: std::env::var("MAX_CHUNK_SUBSCRIPTION_AREA")
                 .unwrap_or("1000".to_string())
                 .parse::<i32>()?,
+            max_user_connection_count: std::env::var("MAX_USER_CONNECTION_COUNT")
+                .unwrap_or("10".to_string())
+                .parse::<usize>()?,
         })
     }
 }

@@ -44,7 +44,7 @@ impl<'a> UiViewer<'a> {
             self.window_button(ui, WindowId::Debug);
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ProfileMenu::new(self.http).ui(ui);
+                ProfileMenu::new(&self.game.data, self.http).ui(ui);
             });
         });
     }

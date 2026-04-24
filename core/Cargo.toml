@@ -11,6 +11,7 @@ serde = ["dep:serde", "dep:serde_json"]
 migration = { path = "migration", optional = true }
 async-trait = { version = "0.1.89", optional = true }
 bitcode = { workspace = true, optional = true }
+bitflags = "2.11.1"
 fastrand = "2.4.1"
 futures = { version = "0.3.32", optional = true }
 num-traits = "0.2.19"

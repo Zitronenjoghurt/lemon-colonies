@@ -1,10 +1,15 @@
 use egui_macroquad::macroquad::prelude::get_time;
 
-#[derive(Default)]
 pub struct Fetchable<T> {
     value: Option<T>,
     state: FetchState,
     refetch_interval: Option<f64>,
+}
+
+impl<T> Default for Fetchable<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Default)]

@@ -26,6 +26,7 @@ impl UserService {
             public: PublicUserInfo {
                 username: user.username.clone(),
             },
+            permissions: user.permissions,
         }
     }
 

@@ -97,6 +97,10 @@ impl Websocket {
         self.users.contains_key(&user_id)
     }
 
+    pub fn user_connection_count(&self, user_id: Uuid) -> usize {
+        self.users.get(&user_id).map(|s| s.len()).unwrap_or(0)
+    }
+
     /// Returns the previous rect if there is one.
     pub fn subscribe_to_chunks(&self, connection_id: Uuid, rect: Rect<i32>) -> Option<Rect<i32>> {
         self.chunk_subscriptions.subscribe(connection_id, rect)
@@ -129,6 +133,11 @@ pub async fn ws_handler(
     let Some(user) = state.data.user.find_by_id(user_id).await? else {
         return Err(ApiError::Unauthorized);
     };
+
+    let connection_count = state.ws.user_connection_count(user.id);
+    if connection_count >= state.config.max_user_connection_count {
+        return Err(ApiError::TooManyConnections);
+    }
 
     Ok(ws.on_upgrade(move |socket| handle_socket(socket, state.clone(), user.id)))
 }

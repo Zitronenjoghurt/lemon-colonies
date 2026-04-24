@@ -11,6 +11,7 @@ pub struct Model {
     pub discord_id: Option<String>,
     #[sea_orm(unique)]
     pub username: String,
+    pub permissions: i64,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }

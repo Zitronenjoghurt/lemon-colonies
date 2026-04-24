@@ -23,6 +23,8 @@ pub enum ApiError {
     OauthTokenExchange,
     #[error("Session error: {0}")]
     Session(#[from] tower_sessions::session::Error),
+    #[error("Too many connections")]
+    TooManyConnections,
     #[error("Unauthorized")]
     Unauthorized,
 }
@@ -33,7 +35,8 @@ impl ApiError {
             Self::DiscordUserInvalid
             | Self::InvalidCsrfToken
             | Self::MissingCsrfToken
-            | Self::MissingPkceVerifier => StatusCode::BAD_REQUEST,
+            | Self::MissingPkceVerifier
+            | Self::TooManyConnections => StatusCode::BAD_REQUEST,
             Self::Core(_)
             | Self::DiscordUnreachable(_)
             | Self::OauthTokenExchange
@@ -48,6 +51,7 @@ impl ApiError {
             | Self::InvalidCsrfToken
             | Self::MissingCsrfToken
             | Self::MissingPkceVerifier
+            | Self::TooManyConnections
             | Self::Unauthorized => false,
             Self::Core(_)
             | Self::DiscordUnreachable(_)
@@ -63,6 +67,7 @@ impl ApiError {
             | Self::MissingCsrfToken
             | Self::MissingPkceVerifier
             | Self::OauthTokenExchange
+            | Self::TooManyConnections
             | Self::Unauthorized => self.to_string(),
             Self::Core(_) => "Internal server error".to_string(),
             Self::DiscordUnreachable(_) => "Discord API unreachable".to_string(),

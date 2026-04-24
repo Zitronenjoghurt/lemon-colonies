@@ -3,6 +3,7 @@ use crate::game::Game;
 use crate::settings::Settings;
 use egui_macroquad::egui::{Grid, Response, Ui, Widget};
 use egui_macroquad::macroquad::prelude::{get_fps, mouse_position, vec2};
+use lemon_colonies_core::game::object::ObjectData;
 
 pub struct DebugWidget<'a> {
     pub game: &'a mut Game,
@@ -50,6 +51,12 @@ impl Widget for DebugWidget<'_> {
                 .show(ui, |ui| {
                     ui.label("Display chunk borders");
                     ui.checkbox(&mut self.settings.display_chunk_borders, "");
+                    ui.end_row();
+
+                    ui.label("Bush");
+                    if ui.button("Place").clicked() {
+                        self.game.object_action.place(ObjectData::Bush);
+                    }
                     ui.end_row();
                 });
         })

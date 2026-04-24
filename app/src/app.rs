@@ -22,16 +22,13 @@ pub struct App {
 
 impl App {
     pub fn load() -> anyhow::Result<Self> {
-        let mut http = Http::default();
-        http.on_start();
-
         let mut ws = Ws::default();
         ws.connect();
 
         Ok(Self {
             settings: Settings::load(),
             game: Game::load()?,
-            http,
+            http: Http::default(),
             toasts: Toasts::new(),
             ui: UiState::load(),
             ws,
@@ -94,6 +91,9 @@ impl App {
     pub fn handle_message(&mut self, message: ServerMessage) {
         match message {
             ServerMessage::Hello => info!("Hello from server!"),
+            ServerMessage::Error(error) => {
+                self.toasts.error(error);
+            }
             ServerMessage::Chunks(chunks) => {
                 debug!("Received {} chunks", chunks.len());
                 self.game.handle_chunks(chunks);
@@ -105,6 +105,9 @@ impl App {
             ServerMessage::ChunkUpdate(update) => {
                 debug!("Received chunk update: {:?}", update);
                 self.game.handle_chunk_update(update);
+            }
+            ServerMessage::UserInfo(info) => {
+                self.game.handle_user_info(info);
             }
         }
     }
