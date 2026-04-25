@@ -9,7 +9,7 @@ pub struct Point<N: Num + Copy> {
 }
 
 impl<N: Num + Copy> Point<N> {
-    pub fn new(x: N, y: N) -> Self {
+    pub const fn new(x: N, y: N) -> Self {
         Self { x, y }
     }
 }

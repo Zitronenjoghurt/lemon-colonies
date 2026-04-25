@@ -5,6 +5,7 @@ use egui_macroquad::egui;
 pub struct Settings {
     pub ui_scale: f32,
     pub display_chunk_borders: bool,
+    pub display_object_collisions: bool,
     #[serde(skip, default = "default_true")]
     pub dirty: bool,
 }
@@ -14,6 +15,7 @@ impl Default for Settings {
         Self {
             ui_scale: Self::DEFAULT_UI_SCALE,
             display_chunk_borders: false,
+            display_object_collisions: false,
             dirty: true,
         }
     }

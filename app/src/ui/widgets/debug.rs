@@ -49,12 +49,20 @@ impl Widget for DebugWidget<'_> {
                 .num_columns(2)
                 .show(ui, |ui| {
                     ui.label("Display chunk borders");
-                    ui.checkbox(&mut self.settings.display_chunk_borders, "");
+                    self.settings.dirty |= ui
+                        .checkbox(&mut self.settings.display_chunk_borders, "")
+                        .changed();
+                    ui.end_row();
+
+                    ui.label("Display object collisions");
+                    self.settings.dirty |= ui
+                        .checkbox(&mut self.settings.display_object_collisions, "")
+                        .changed();
                     ui.end_row();
 
                     ui.label("Bush");
                     if ui.button("Place").clicked() {
-                        self.game.object_action.place(ObjectData::Bush);
+                        self.game.object_action.start_place(ObjectData::Bush);
                     }
                     ui.end_row();
                 });

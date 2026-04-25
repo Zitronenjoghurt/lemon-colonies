@@ -21,4 +21,17 @@ pub enum CoreError {
     InvalidObjectData,
     #[error("Invalid terrain")]
     InvalidTerrain,
+    #[error("Chunk not owned")]
+    ChunkNotOwned,
+    #[error("Object collides with another object")]
+    ObjectCollision,
+}
+
+impl CoreError {
+    pub fn is_user_error(&self) -> bool {
+        match self {
+            Self::ChunkNotOwned | Self::ObjectCollision => true,
+            _ => false,
+        }
+    }
 }

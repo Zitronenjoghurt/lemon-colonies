@@ -11,17 +11,41 @@ pub struct Rect<N: Num + Copy> {
 }
 
 impl<N: Num + Copy> Rect<N> {
-    pub fn new(min: Point<N>, max: Point<N>) -> Self {
+    #[inline(always)]
+    pub const fn new(min: Point<N>, max: Point<N>) -> Self {
         Self { min, max }
     }
 
+    #[inline(always)]
+    pub fn from_size(origin: Point<N>, width: N, height: N) -> Self {
+        Self {
+            min: origin,
+            max: Point {
+                x: origin.x + width,
+                y: origin.y + height,
+            },
+        }
+    }
+
+    #[inline(always)]
+    pub fn width(&self) -> N {
+        self.max.x - self.min.x
+    }
+
+    #[inline(always)]
+    pub fn height(&self) -> N {
+        self.max.y - self.min.y
+    }
+
+    #[inline(always)]
     pub fn area(&self) -> N {
         (self.max.x - self.min.x) * (self.max.y - self.min.y)
     }
 }
 
 impl<N: Num + Copy + PartialOrd> Rect<N> {
-    pub fn contains(&self, p: &Point<N>) -> bool {
+    #[inline(always)]
+    pub fn contains_point(&self, p: &Point<N>) -> bool {
         p.x >= self.min.x && p.x <= self.max.x && p.y >= self.min.y && p.y <= self.max.y
     }
 
@@ -30,5 +54,21 @@ impl<N: Num + Copy + PartialOrd> Rect<N> {
         let max = self.max;
         iter_int_range(min.y, max.y)
             .flat_map(move |y| iter_int_range(min.x, max.x).map(move |x| Point { x, y }))
+    }
+
+    #[inline(always)]
+    pub fn overlaps_rect(&self, other: &Rect<N>) -> bool {
+        self.min.x < other.max.x
+            && self.max.x > other.min.x
+            && self.min.y < other.max.y
+            && self.max.y > other.min.y
+    }
+
+    #[inline(always)]
+    pub fn within_rect(&self, other: &Rect<N>) -> bool {
+        self.min.x >= other.min.x
+            && self.max.x <= other.max.x
+            && self.min.y >= other.min.y
+            && self.max.y <= other.max.y
     }
 }

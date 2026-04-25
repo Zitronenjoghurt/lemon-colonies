@@ -18,16 +18,23 @@ pub enum ServerError {
     TokenRequest(String),
     #[error("Error parsing URL: {0}")]
     Url(#[from] url::ParseError),
-    #[error("Chunk not owned")]
-    ChunkNotOwned,
     #[error("Unauthorized")]
     Unauthorized,
 }
 
 impl ServerError {
+    pub fn message(&self) -> String {
+        match self {
+            Self::Core(e) => e.to_string(),
+            Self::Unauthorized => "Unauthorized".to_string(),
+            _ => "An unexpected error occurred".to_string(),
+        }
+    }
+
     pub fn is_user_error(&self) -> bool {
         match self {
-            Self::ChunkNotOwned | Self::Unauthorized => true,
+            Self::Core(e) => e.is_user_error(),
+            Self::Unauthorized => true,
             _ => false,
         }
     }

@@ -1,6 +1,7 @@
 use crate::game::atlas::{Atlas, AtlasStore};
 use egui_macroquad::macroquad::prelude::{
-    draw_texture_ex, vec2, Color, DrawTextureParams, Rect, Vec2, WHITE,
+    draw_rectangle, draw_rectangle_lines, draw_texture_ex, vec2, Color, DrawTextureParams, Rect,
+    Vec2, WHITE,
 };
 use lemon_colonies_core::game::object::ObjectData;
 use lemon_colonies_core::game::terrain::Terrain;
@@ -56,6 +57,7 @@ pub struct SpriteDraw {
     pub anchor: WorldCoords,
     pub sort_y: f32,
     pub tint: Color,
+    pub collision: Option<Rect>,
 }
 
 impl SpriteDraw {
@@ -66,11 +68,17 @@ impl SpriteDraw {
             anchor,
             sort_y,
             tint: WHITE,
+            collision: None,
         }
     }
 
     pub fn with_tint(mut self, tint: Color) -> Self {
         self.tint = tint;
+        self
+    }
+
+    pub fn with_collision(mut self, collision: Rect) -> Self {
+        self.collision = Some(collision);
         self
     }
 
@@ -87,6 +95,13 @@ impl SpriteDraw {
                 ..Default::default()
             },
         );
+    }
+
+    pub fn draw_collision(&self) {
+        if let Some(cr) = self.collision {
+            draw_rectangle(cr.x, cr.y, cr.w, cr.h, Color::new(0.0, 1.0, 0.0, 0.15));
+            draw_rectangle_lines(cr.x, cr.y, cr.w, cr.h, 0.5, Color::new(0.0, 1.0, 0.0, 0.6));
+        }
     }
 }
 

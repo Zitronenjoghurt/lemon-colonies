@@ -23,7 +23,7 @@ impl ChunkSubscriptions {
     pub fn connections_for_chunk(&self, coords: ChunkCoords) -> Vec<ConnectionId> {
         self.subscriptions
             .iter()
-            .filter(|entry| entry.value().contains(&coords.point()))
+            .filter(|entry| entry.value().contains_point(&coords.point()))
             .map(|entry| *entry.key())
             .collect()
     }

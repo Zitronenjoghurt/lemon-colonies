@@ -2,6 +2,7 @@ use crate::error::{CoreError, CoreResult};
 use crate::game::object::{Object, ObjectData, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
 use crate::math::coords::{ChunkCoords, LocalCoords};
+use crate::math::rect::Rect;
 use std::collections::HashMap;
 use strum::EnumCount;
 
@@ -53,6 +54,17 @@ impl Chunk {
                 },
             );
         }
+    }
+
+    pub fn rect_collides_with_object(&self, rect: Rect<f32>) -> bool {
+        for obj in self.objects.values() {
+            let pos = obj.pos.with_chunk(self.pos).world();
+            let collision = obj.data.collision_rect(pos);
+            if rect.overlaps_rect(&collision) {
+                return true;
+            }
+        }
+        false
     }
 }
 

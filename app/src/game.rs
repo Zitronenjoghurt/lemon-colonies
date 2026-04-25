@@ -2,7 +2,7 @@ use crate::game::atlas::AtlasStore;
 use crate::game::camera::ClientCamera;
 use crate::game::data::ClientData;
 use crate::game::object_action::ObjectAction;
-use crate::game::world::ClientWorld;
+use crate::game::world::{ClientWorld, WorldDrawSettings};
 use crate::settings::Settings;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::logging::debug;
@@ -54,13 +54,19 @@ impl Game {
             self.update_chunk_subscription(ws);
 
             if !pointer_consumed {
-                self.object_action.update(ws, &self.camera);
+                self.object_action.update(ws, &self.camera, &self.world);
             }
         }
     }
 
     pub fn draw(&mut self, settings: &Settings) {
-        self.world.draw(&self.atlas, &self.camera, settings);
+        let world_draw = WorldDrawSettings {
+            chunk_borders: settings.display_chunk_borders,
+            object_collisions: settings.display_object_collisions
+                || self.object_action.wants_to_place(),
+        };
+        self.world.draw(&self.atlas, &self.camera, &world_draw);
+
         self.object_action.draw(&self.atlas, &self.camera);
     }
 }

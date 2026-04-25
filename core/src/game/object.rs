@@ -1,6 +1,8 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::chunk::ChunkObject;
-use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords};
+use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords, WorldCoords};
+use crate::math::point::Point;
+use crate::math::rect::Rect;
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 use uuid::Uuid;
 
@@ -50,6 +52,27 @@ impl ObjectData {
         match self {
             Self::Bush => 10.0,
         }
+    }
+
+    pub const fn collision_height(&self) -> f32 {
+        match self {
+            Self::Bush => 8.0,
+        }
+    }
+
+    pub const fn collision_width(&self) -> f32 {
+        match self {
+            Self::Bush => 8.0,
+        }
+    }
+
+    pub const fn collision_rect(&self, pos: WorldCoords) -> Rect<f32> {
+        let hw = self.collision_width() / 2.0;
+        let h = self.collision_height();
+        Rect::new(
+            Point::new(pos.x - hw, pos.y - h),
+            Point::new(pos.x + hw, pos.y),
+        )
     }
 
     pub const fn pivot(&self) -> (f32, f32) {

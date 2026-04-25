@@ -1,33 +1,50 @@
 use crate::game::atlas::AtlasStore;
 use crate::game::camera::{mouse_screen_coords, ClientCamera};
 use crate::game::sprite::{HasSprite, SpriteDraw};
+use crate::game::world::ClientWorld;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::camera::set_default_camera;
 use egui_macroquad::macroquad::color::Color;
 use egui_macroquad::macroquad::input::{is_mouse_button_pressed, MouseButton};
 use egui_macroquad::macroquad::logging::debug;
+use egui_macroquad::macroquad::prelude::Rect as GlamRect;
 use lemon_colonies_core::game::object::ObjectData;
-use lemon_colonies_core::math::coords::WorldCoords;
+use lemon_colonies_core::math::coords::{ChunkLocal, WorldCoords};
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 
 #[derive(Default)]
 pub struct ObjectAction {
     target_data: Option<ObjectData>,
     mode: Option<ObjectActionMode>,
+    collision_detected: bool,
+    last_collision: Option<ChunkLocal>,
     continuous: bool,
 }
 
 impl ObjectAction {
-    pub fn place(&mut self, data: ObjectData) {
+    pub fn start_place(&mut self, data: ObjectData) {
         self.target_data = Some(data);
         self.mode = Some(ObjectActionMode::Place);
         self.continuous = true;
     }
 
-    pub fn update(&mut self, ws: &mut Ws, camera: &ClientCamera) {
+    pub fn update(&mut self, ws: &mut Ws, camera: &ClientCamera, world: &ClientWorld) {
+        if self.target_data.is_none() {
+            return;
+        }
+
+        if is_mouse_button_pressed(MouseButton::Right) {
+            self.target_data = None;
+            self.mode = None;
+            self.continuous = false;
+            return;
+        }
+
+        let mouse_world = camera.screen_to_world(mouse_screen_coords());
+        self.update_collision(world, mouse_world);
         if let Some(mode) = &self.mode {
             match mode {
-                ObjectActionMode::Place => self.handle_object_placement_input(ws, camera),
+                ObjectActionMode::Place => self.handle_object_placement_input(ws, mouse_world),
             }
         }
     }
@@ -39,22 +56,47 @@ impl ObjectAction {
             }
         }
     }
+
+    fn update_collision(&mut self, world: &ClientWorld, mouse_world: WorldCoords) {
+        let Some(object) = &self.target_data else {
+            return;
+        };
+
+        let mouse_pos = mouse_world.chunk_local();
+        if Some(mouse_pos) == self.last_collision {
+            return;
+        }
+
+        let offset = object.pivot_center_offset();
+        let world_coords = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
+        let collision_rect = object.collision_rect(world_coords);
+
+        self.collision_detected = world.rect_collides_with_object(collision_rect);
+        self.last_collision = Some(mouse_pos);
+    }
+
+    pub fn wants_to_place(&self) -> bool {
+        self.mode == Some(ObjectActionMode::Place)
+    }
 }
 
 // Input
 impl ObjectAction {
-    pub fn handle_object_placement_input(&mut self, ws: &mut Ws, camera: &ClientCamera) {
+    pub fn handle_object_placement_input(&mut self, ws: &mut Ws, mouse_world: WorldCoords) {
+        if self.collision_detected {
+            return;
+        }
+
         if !is_mouse_button_pressed(MouseButton::Left) {
             return;
         }
+
         let Some(data) = &self.target_data else {
             return;
         };
 
-        let mouse_world = camera.screen_to_world(mouse_screen_coords());
-
         let offset = data.pivot_center_offset();
-        let world_coords = mouse_world + WorldCoords::new(offset.0, offset.1);
+        let world_coords = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
         let pos = world_coords.chunk_local();
 
         debug!(
@@ -86,14 +128,32 @@ impl ObjectAction {
         let mouse_world = camera.screen_to_world(mouse_screen_coords());
         let offset = object.pivot_center_offset();
         let anchor = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
-        SpriteDraw::new(object.sprite(), anchor)
-            .with_tint(Color::new(1.0, 1.0, 1.0, 0.5))
-            .draw(atlas);
+        let tint = if self.collision_detected {
+            Color::new(1.0, 0.2, 0.2, 0.5)
+        } else {
+            Color::new(1.0, 1.0, 1.0, 0.5)
+        };
+
+        let collision = object.collision_rect(anchor);
+        let collision_rect = GlamRect::new(
+            collision.min.x,
+            collision.min.y,
+            collision.width(),
+            collision.height(),
+        );
+
+        let sprite_draw = SpriteDraw::new(object.sprite(), anchor)
+            .with_tint(tint)
+            .with_collision(collision_rect);
+
+        sprite_draw.draw(atlas);
+        sprite_draw.draw_collision();
 
         set_default_camera();
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectActionMode {
     Place,
 }

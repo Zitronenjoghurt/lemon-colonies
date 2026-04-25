@@ -1,5 +1,6 @@
 use crate::game::chunk::CHUNK_EDGE_PIXELS;
 use crate::math::point::Point;
+use crate::math::rect::Rect;
 use std::ops::{Add, Sub};
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -85,6 +86,23 @@ impl ChunkCoords {
 
     pub fn point(&self) -> Point<i32> {
         Point::new(self.x, self.y)
+    }
+
+    pub fn bounding_rect(&self) -> Rect<f32> {
+        Rect::new(
+            Point::new(
+                self.x as f32 * CHUNK_EDGE_PIXELS as f32,
+                self.y as f32 * CHUNK_EDGE_PIXELS as f32,
+            ),
+            Point::new(
+                (self.x + 1) as f32 * CHUNK_EDGE_PIXELS as f32,
+                (self.y + 1) as f32 * CHUNK_EDGE_PIXELS as f32,
+            ),
+        )
+    }
+
+    pub fn with_local(&self, local: LocalCoords) -> ChunkLocal {
+        ChunkLocal::new(*self, local)
     }
 }
 

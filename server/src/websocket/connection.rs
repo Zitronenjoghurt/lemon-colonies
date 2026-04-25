@@ -35,7 +35,7 @@ impl WebsocketConnection {
                     Ok(message) => {
                         if let Err(err) = self.handle_client_message(message).await {
                             if err.is_user_error() {
-                                self.respond(ServerMessage::Error(err.to_string()));
+                                self.respond(ServerMessage::Error(err.message()));
                             } else {
                                 error!(
                                     "[{}] An error occurred on message handling: {err}",
@@ -106,7 +106,7 @@ impl WebsocketConnection {
         let coords: Vec<_> = rect
             .iter_points()
             .filter(|p| {
-                old_rect.is_none_or(|old| !old.contains(p)) && visibility.is_visible(p.x, p.y)
+                old_rect.is_none_or(|old| !old.contains_point(p)) && visibility.is_visible(p.x, p.y)
             })
             .map(|p| ChunkCoords::new(p.x, p.y))
             .collect();
@@ -127,17 +127,18 @@ impl WebsocketConnection {
         Ok(())
     }
 
-    // ToDo: Check object obstruction
     async fn handle_object_placement(&self, placement: ObjectPlacement) -> ServerResult<()> {
-        let chunk_owned = self
-            .state
+        self.state
             .service
             .chunk
-            .does_user_own_chunk(self.user_id, placement.pos.chunk)
+            .validate_chunk_owned(self.user_id, placement.pos.chunk)
             .await?;
-        if !chunk_owned {
-            return Err(ServerError::ChunkNotOwned);
-        };
+
+        self.state
+            .service
+            .object
+            .validate_placement_collision(&placement)
+            .await?;
 
         let chunk_coords = placement.pos.chunk;
         let active = object::ActiveModel::try_from(placement)?;

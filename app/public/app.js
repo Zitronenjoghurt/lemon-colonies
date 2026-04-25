@@ -9,6 +9,7 @@
 
         if (res.ok) {
             canvas.style.display = "block";
+            canvas.addEventListener("contextmenu", (e) => e.preventDefault());
             miniquad_add_plugin({
                 name: "lemon_colonies_helpers",
                 version: "1.0.0",
