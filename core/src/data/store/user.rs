@@ -1,7 +1,9 @@
-use crate::data::entity::user;
+use crate::data::entity::{colony, colony_chunk, user};
 use crate::data::store::Store;
 use crate::error::CoreResult;
-use sea_orm::ColumnTrait;
+use sea_orm::sea_query::IntoCondition;
+use sea_orm::QueryFilter;
+use sea_orm::{ColumnTrait, EntityTrait, Linked, RelationDef, RelationTrait};
 use sea_orm::{DatabaseConnection, Set};
 
 pub struct UserStore {
@@ -43,5 +45,35 @@ impl UserStore {
             ..Default::default()
         };
         self.insert(new).await
+    }
+
+    pub async fn find_by_with_owned_chunks<F>(
+        &self,
+        filter: F,
+    ) -> CoreResult<Option<(user::Model, Vec<colony_chunk::Model>)>>
+    where
+        F: IntoCondition + Send,
+    {
+        let result = user::Entity::find()
+            .filter(filter)
+            .find_with_linked(UserToColonyChunks)
+            .all(self.db())
+            .await?;
+
+        Ok(result.into_iter().next())
+    }
+}
+
+pub struct UserToColonyChunks;
+
+impl Linked for UserToColonyChunks {
+    type FromEntity = user::Entity;
+    type ToEntity = colony_chunk::Entity;
+
+    fn link(&self) -> Vec<RelationDef> {
+        vec![
+            colony::Relation::User.def().rev(),
+            colony_chunk::Relation::Colony.def().rev(),
+        ]
     }
 }

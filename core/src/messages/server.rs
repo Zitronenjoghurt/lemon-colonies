@@ -13,6 +13,7 @@ pub enum ServerMessage {
     ColonyPositions(Vec<ChunkCoords>),
     Chunks(Vec<Chunk>),
     ChunkUpdate(chunk_update::ChunkUpdateMessage),
+    OwnedChunks(Vec<ChunkCoords>),
     UserInfo(PrivateUserInfo),
 }
 

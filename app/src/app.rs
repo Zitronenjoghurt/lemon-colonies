@@ -106,6 +106,9 @@ impl App {
                 debug!("Received chunk update: {:?}", update);
                 self.game.handle_chunk_update(update);
             }
+            ServerMessage::OwnedChunks(chunks) => {
+                self.game.handle_owned_chunks(chunks);
+            }
             ServerMessage::UserInfo(info) => {
                 self.game.handle_user_info(info);
             }

@@ -4,7 +4,7 @@ use crate::data::Data;
 use crate::error::{CoreError, CoreResult};
 use crate::game::object::ObjectData;
 use crate::math::coords::{ChunkCoords, LocalCoords, WorldCoords};
-use crate::messages::client::object_placement::ObjectPlacement;
+use crate::math::rect::Rect;
 use futures::TryStreamExt;
 use sea_orm::{ColumnTrait, ExprTrait};
 use std::sync::Arc;
@@ -18,16 +18,9 @@ impl ObjectService {
         Self { data: data.clone() }
     }
 
-    pub async fn validate_placement_collision(
-        &self,
-        placement: &ObjectPlacement,
-    ) -> CoreResult<()> {
-        let pos = placement.pos.world();
-        let rect = placement.data.collision_rect(pos);
-
+    pub async fn validate_placement_collision(&self, rect: Rect<f32>) -> CoreResult<()> {
         let min_chunk = WorldCoords::new(rect.min.x, rect.min.y).chunk();
         let max_chunk = WorldCoords::new(rect.max.x, rect.max.y).chunk();
-
         for chunk_y in min_chunk.y..=max_chunk.y {
             for chunk_x in min_chunk.x..=max_chunk.x {
                 let chunk_coords = ChunkCoords::new(chunk_x, chunk_y);

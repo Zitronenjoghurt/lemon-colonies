@@ -12,6 +12,7 @@ pub struct Data {
     connection: DatabaseConnection,
     pub chunk: store::chunk::ChunkStore,
     pub colony: store::colony::ColonyStore,
+    pub colony_chunk: store::colony_chunk::ColonyChunkStore,
     pub object: store::object::ObjectStore,
     pub user: store::user::UserStore,
 }
@@ -27,6 +28,7 @@ impl Data {
         let data = Self {
             chunk: store::chunk::ChunkStore::new(&connection),
             colony: store::colony::ColonyStore::new(&connection),
+            colony_chunk: store::colony_chunk::ColonyChunkStore::new(&connection),
             object: store::object::ObjectStore::new(&connection),
             user: store::user::UserStore::new(&connection),
             connection,

@@ -1,9 +1,10 @@
 use crate::game::atlas::AtlasStore;
 use crate::game::camera::ClientCamera;
 use crate::game::chunk::ClientChunk;
+use crate::game::data::ClientData;
 use crate::game::sprite::{HasSprite, SpriteDraw};
 use egui_macroquad::macroquad::prelude::{
-    draw_rectangle_lines, set_default_camera, Color, Rect as GlamRect,
+    draw_line, draw_rectangle_lines, set_default_camera, Color, Rect as GlamRect,
 };
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::Object;
@@ -13,6 +14,8 @@ use std::collections::HashMap;
 
 const CHUNK_RETAIN_PADDING: i32 = 20;
 const CHUNK_BORDER_THICKNESS: f32 = 1.0;
+const TERRITORY_OUTLINE_THICKNESS: f32 = 2.0;
+const TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 6.0, 0.0, 0.8);
 
 pub struct WorldDrawSettings {
     pub chunk_borders: bool,
@@ -36,6 +39,7 @@ impl ClientWorld {
         store: &AtlasStore,
         camera: &ClientCamera,
         settings: &WorldDrawSettings,
+        data: &ClientData,
     ) {
         self.rebuild(store);
 
@@ -44,6 +48,7 @@ impl ClientWorld {
         self.draw_chunks();
         self.draw_objects(store, settings);
         self.draw_chunk_grid(settings);
+        self.draw_territory_outline(data);
 
         set_default_camera();
     }
@@ -90,6 +95,59 @@ impl ClientWorld {
         if settings.object_collisions {
             for sprite_draw in &draws {
                 sprite_draw.draw_collision();
+            }
+        }
+    }
+
+    fn draw_territory_outline(&self, data: &ClientData) {
+        let Some(owned) = data.owned_chunks.value() else {
+            return;
+        };
+
+        for &pos in owned {
+            let x = pos.x as f32 * CHUNK_EDGE_PIXELS as f32;
+            let y = pos.y as f32 * CHUNK_EDGE_PIXELS as f32;
+            let size = CHUNK_EDGE_PIXELS as f32;
+
+            if !owned.contains(&ChunkCoords::new(pos.x, pos.y - 1)) {
+                draw_line(
+                    x,
+                    y,
+                    x + size,
+                    y,
+                    TERRITORY_OUTLINE_THICKNESS,
+                    TERRITORY_OUTLINE_COLOR,
+                );
+            }
+            if !owned.contains(&ChunkCoords::new(pos.x, pos.y + 1)) {
+                draw_line(
+                    x,
+                    y + size,
+                    x + size,
+                    y + size,
+                    TERRITORY_OUTLINE_THICKNESS,
+                    TERRITORY_OUTLINE_COLOR,
+                );
+            }
+            if !owned.contains(&ChunkCoords::new(pos.x - 1, pos.y)) {
+                draw_line(
+                    x,
+                    y,
+                    x,
+                    y + size,
+                    TERRITORY_OUTLINE_THICKNESS,
+                    TERRITORY_OUTLINE_COLOR,
+                );
+            }
+            if !owned.contains(&ChunkCoords::new(pos.x + 1, pos.y)) {
+                draw_line(
+                    x + size,
+                    y,
+                    x + size,
+                    y + size,
+                    TERRITORY_OUTLINE_THICKNESS,
+                    TERRITORY_OUTLINE_COLOR,
+                );
             }
         }
     }

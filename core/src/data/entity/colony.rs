@@ -6,9 +6,9 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "colony")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub chunk_x: i32,
+    pub origin_chunk_x: i32,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub chunk_y: i32,
+    pub origin_chunk_y: i32,
     pub user_id: Uuid,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -18,12 +18,14 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::chunk::Entity",
-        from = "(Column::ChunkX, Column::ChunkY)",
+        from = "(Column::OriginChunkX, Column::OriginChunkY)",
         to = "(super::chunk::Column::X, super::chunk::Column::Y)",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
     Chunk,
+    #[sea_orm(has_many = "super::colony_chunk::Entity")]
+    ColonyChunk,
     #[sea_orm(
         belongs_to = "super::user::Entity",
         from = "Column::UserId",
@@ -34,9 +36,9 @@ pub enum Relation {
     User,
 }
 
-impl Related<super::chunk::Entity> for Entity {
+impl Related<super::colony_chunk::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Chunk.def()
+        Relation::ColonyChunk.def()
     }
 }
 
@@ -46,12 +48,12 @@ impl Related<super::user::Entity> for Entity {
     }
 }
 
-impl Related<super::object::Entity> for Entity {
+impl Related<super::chunk::Entity> for Entity {
     fn to() -> RelationDef {
-        super::chunk::Relation::Object.def()
+        super::colony_chunk::Relation::Chunk.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::chunk::Relation::Colony.def().rev())
+        Some(super::colony_chunk::Relation::Colony.def().rev())
     }
 }
 

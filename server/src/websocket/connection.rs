@@ -70,6 +70,7 @@ impl WebsocketConnection {
             ClientMessage::ObjectPlacement(placement) => {
                 self.handle_object_placement(placement).await?
             }
+            ClientMessage::OwnedChunks => self.handle_owned_chunks().await?,
             ClientMessage::UserInfo => self.handle_user_info().await?,
         };
         Ok(())
@@ -128,16 +129,18 @@ impl WebsocketConnection {
     }
 
     async fn handle_object_placement(&self, placement: ObjectPlacement) -> ServerResult<()> {
+        let rect = placement.collision_rect();
+
         self.state
             .service
             .chunk
-            .validate_chunk_owned(self.user_id, placement.pos.chunk)
+            .validate_chunks_owned(self.user_id, rect)
             .await?;
 
         self.state
             .service
             .object
-            .validate_placement_collision(&placement)
+            .validate_placement_collision(rect)
             .await?;
 
         let chunk_coords = placement.pos.chunk;
@@ -147,6 +150,18 @@ impl WebsocketConnection {
         let object = Object::try_from(object_model)?;
         let chunk_update = ChunkUpdateMessage::update_object(chunk_coords, object);
         self.state.ws.send_chunk_update(chunk_update);
+
+        Ok(())
+    }
+
+    async fn handle_owned_chunks(&self) -> ServerResult<()> {
+        let owned_chunks = self
+            .state
+            .service
+            .user
+            .get_owned_chunk_coords(self.user_id)
+            .await?;
+        self.respond(ServerMessage::OwnedChunks(owned_chunks));
 
         Ok(())
     }

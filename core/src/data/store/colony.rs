@@ -31,8 +31,8 @@ impl ColonyStore {
         let coords = colony::Entity::find()
             .filter(colony::Column::UserId.eq(user_id))
             .select_only()
-            .column(colony::Column::ChunkX)
-            .column(colony::Column::ChunkY)
+            .column(colony::Column::OriginChunkX)
+            .column(colony::Column::OriginChunkY)
             .into_tuple::<(i32, i32)>()
             .all(&self.connection)
             .await?

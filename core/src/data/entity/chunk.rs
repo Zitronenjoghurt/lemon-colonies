@@ -19,13 +19,15 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_one = "super::colony::Entity")]
     Colony,
+    #[sea_orm(has_one = "super::colony_chunk::Entity")]
+    ColonyChunk,
     #[sea_orm(has_many = "super::object::Entity")]
     Object,
 }
 
-impl Related<super::colony::Entity> for Entity {
+impl Related<super::colony_chunk::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Colony.def()
+        Relation::ColonyChunk.def()
     }
 }
 
@@ -35,12 +37,12 @@ impl Related<super::object::Entity> for Entity {
     }
 }
 
-impl Related<super::user::Entity> for Entity {
+impl Related<super::colony::Entity> for Entity {
     fn to() -> RelationDef {
-        super::colony::Relation::User.def()
+        super::colony_chunk::Relation::Colony.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::colony::Relation::Chunk.def().rev())
+        Some(super::colony_chunk::Relation::Chunk.def().rev())
     }
 }
 

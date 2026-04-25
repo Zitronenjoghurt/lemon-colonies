@@ -54,7 +54,8 @@ impl Game {
             self.update_chunk_subscription(ws);
 
             if !pointer_consumed {
-                self.object_action.update(ws, &self.camera, &self.world);
+                self.object_action
+                    .update(ws, &self.camera, &self.world, &self.data);
             }
         }
     }
@@ -65,7 +66,8 @@ impl Game {
             object_collisions: settings.display_object_collisions
                 || self.object_action.wants_to_place(),
         };
-        self.world.draw(&self.atlas, &self.camera, &world_draw);
+        self.world
+            .draw(&self.atlas, &self.camera, &world_draw, &self.data);
 
         self.object_action.draw(&self.atlas, &self.camera);
     }
@@ -102,13 +104,21 @@ impl Game {
     }
 
     pub fn handle_colony_positions(&mut self, positions: Vec<ChunkCoords>) {
-        self.data.colony_positions.set_value(positions);
+        self.data
+            .colony_positions
+            .set_value(positions.iter().copied().collect());
     }
 
     pub fn handle_chunk_update(&mut self, update: ChunkUpdateMessage) {
         match update.kind {
             ChunkUpdateKind::UpdateObject(object) => self.world.update_object(object),
         }
+    }
+
+    pub fn handle_owned_chunks(&mut self, chunks: Vec<ChunkCoords>) {
+        self.data
+            .owned_chunks
+            .set_value(chunks.iter().copied().collect());
     }
 
     pub fn handle_user_info(&mut self, info: PrivateUserInfo) {

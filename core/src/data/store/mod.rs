@@ -6,6 +6,7 @@ use sea_orm::*;
 
 pub mod chunk;
 pub mod colony;
+pub mod colony_chunk;
 pub mod object;
 pub mod user;
 

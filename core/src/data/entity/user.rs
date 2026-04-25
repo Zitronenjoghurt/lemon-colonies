@@ -28,13 +28,4 @@ impl Related<super::colony::Entity> for Entity {
     }
 }
 
-impl Related<super::chunk::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::colony::Relation::Chunk.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::colony::Relation::User.def().rev())
-    }
-}
-
 impl ActiveModelBehavior for ActiveModel {}

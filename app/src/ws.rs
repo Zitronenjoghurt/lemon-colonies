@@ -97,6 +97,10 @@ impl Ws {
         self.send_bytes(&ClientMessage::ObjectPlacement(placement).as_bytes());
     }
 
+    pub fn request_owned_chunks(&mut self) {
+        self.send_bytes(&ClientMessage::OwnedChunks.as_bytes());
+    }
+
     pub fn request_user_info(&mut self) {
         self.send_bytes(&ClientMessage::UserInfo.as_bytes());
     }

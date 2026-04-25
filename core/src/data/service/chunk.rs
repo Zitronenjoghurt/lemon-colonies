@@ -1,12 +1,13 @@
-use crate::data::entity::colony;
+use crate::data::entity::{colony, colony_chunk};
 use crate::data::store::Store;
 use crate::data::Data;
 use crate::error::{CoreError, CoreResult};
-use crate::math::coords::ChunkCoords;
+use crate::math::coords::{ChunkCoords, WorldCoords};
+use crate::math::rect::Rect;
 use crate::types::chunk_visibility::ChunkVisibility;
 use futures::TryStreamExt;
 use sea_orm::prelude::Uuid;
-use sea_orm::ColumnTrait;
+use sea_orm::{ColumnTrait, ExprTrait};
 use std::sync::Arc;
 
 pub struct ChunkService {
@@ -31,20 +32,42 @@ impl ChunkService {
         let mut chunk_visibility = ChunkVisibility::default();
         while let Some(colony) = colony_stream.try_next().await? {
             // ToDo: Make radius depend on intel or something
-            chunk_visibility.insert(colony.chunk_x, colony.chunk_y, 128);
+            chunk_visibility.insert(colony.origin_chunk_x, colony.origin_chunk_y, 128);
         }
 
         Ok(chunk_visibility)
     }
 
-    // ToDo: Account for claimed chunks besides just the colony chunk
     pub async fn validate_chunk_owned(&self, user_id: Uuid, pos: ChunkCoords) -> CoreResult<()> {
-        let Some(colony) = self.data.colony.find_by_id((pos.x, pos.y)).await? else {
+        let Some((_, owner)) = self
+            .data
+            .colony_chunk
+            .find_one_by_with_owner(
+                colony_chunk::Column::ChunkX
+                    .eq(pos.x)
+                    .and(colony_chunk::Column::ChunkY.eq(pos.y)),
+            )
+            .await?
+        else {
             return Err(CoreError::ChunkNotOwned);
         };
 
-        if colony.user_id != user_id {
+        if owner.id != user_id {
             return Err(CoreError::ChunkNotOwned);
+        }
+
+        Ok(())
+    }
+
+    pub async fn validate_chunks_owned(&self, user_id: Uuid, rect: Rect<f32>) -> CoreResult<()> {
+        let min_chunk = WorldCoords::new(rect.min.x, rect.min.y).chunk();
+        let max_chunk = WorldCoords::new(rect.max.x, rect.max.y).chunk();
+
+        for chunk_y in min_chunk.y..=max_chunk.y {
+            for chunk_x in min_chunk.x..=max_chunk.x {
+                self.validate_chunk_owned(user_id, ChunkCoords::new(chunk_x, chunk_y))
+                    .await?;
+            }
         }
 
         Ok(())
