@@ -8,6 +8,7 @@ use crate::ws::Ws;
 use egui_macroquad::macroquad::logging::debug;
 use egui_macroquad::macroquad::prelude::{get_time, MouseButton};
 use lemon_colonies_core::game::chunk::Chunk;
+use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdateKind, ChunkUpdateMessage};
 use lemon_colonies_core::types::user_info::PrivateUserInfo;
@@ -94,7 +95,7 @@ impl Game {
         self.world.insert_chunks(chunks);
     }
 
-    pub fn handle_colony_positions(&mut self, positions: Vec<(i32, i32)>) {
+    pub fn handle_colony_positions(&mut self, positions: Vec<ChunkCoords>) {
         self.data.colony_positions.set_value(positions);
     }
 

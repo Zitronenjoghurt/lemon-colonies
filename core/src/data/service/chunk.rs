@@ -2,6 +2,7 @@ use crate::data::entity::colony;
 use crate::data::store::Store;
 use crate::data::Data;
 use crate::error::CoreResult;
+use crate::math::coords::ChunkCoords;
 use crate::types::chunk_visibility::ChunkVisibility;
 use futures::TryStreamExt;
 use sea_orm::prelude::Uuid;
@@ -37,13 +38,8 @@ impl ChunkService {
     }
 
     // ToDo: Account for claimed chunks besides just the colony chunk
-    pub async fn does_user_own_chunk(
-        &self,
-        user_id: Uuid,
-        chunk_x: i32,
-        chunk_y: i32,
-    ) -> CoreResult<bool> {
-        let Some(colony) = self.data.colony.find_by_id((chunk_x, chunk_y)).await? else {
+    pub async fn does_user_own_chunk(&self, user_id: Uuid, pos: ChunkCoords) -> CoreResult<bool> {
+        let Some(colony) = self.data.colony.find_by_id((pos.x, pos.y)).await? else {
             return Ok(false);
         };
         Ok(colony.user_id == user_id)

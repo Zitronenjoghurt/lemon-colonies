@@ -6,6 +6,7 @@ use crate::settings::Settings;
 use egui_macroquad::macroquad::prelude::*;
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::Object;
+use lemon_colonies_core::math::coords::ChunkCoords;
 use std::collections::HashMap;
 
 const CHUNK_RETAIN_PADDING: i32 = 20;
@@ -13,7 +14,7 @@ const CHUNK_BORDER_THICKNESS: f32 = 1.0;
 
 #[derive(Default)]
 pub struct ClientWorld {
-    chunks: HashMap<(i32, i32), ClientChunk>,
+    chunks: HashMap<ChunkCoords, ClientChunk>,
 }
 
 impl ClientWorld {
@@ -45,11 +46,10 @@ impl ClientWorld {
         let mut objects: Vec<SpriteDraw> = Vec::new();
         for chunk in self.chunks.values() {
             for obj in chunk.chunk.objects.values() {
-                let world_pos = vec2(
-                    chunk.chunk.x as f32 * CHUNK_EDGE_PIXELS as f32 + obj.x as f32,
-                    chunk.chunk.y as f32 * CHUNK_EDGE_PIXELS as f32 + obj.y as f32,
-                );
-                objects.push(SpriteDraw::new(obj.data.sprite(), world_pos));
+                objects.push(SpriteDraw::new(
+                    obj.data.sprite(),
+                    obj.pos.with_chunk(chunk.chunk.pos).world(),
+                ));
             }
         }
         objects.sort_by(|a, b| a.sort_y.partial_cmp(&b.sort_y).unwrap());
@@ -65,8 +65,8 @@ impl ClientWorld {
 
         let color = Color::new(1.0, 0.0, 1.0, 0.6);
         for chunk in self.chunks.values() {
-            let x = chunk.chunk.x as f32 * CHUNK_EDGE_PIXELS as f32;
-            let y = chunk.chunk.y as f32 * CHUNK_EDGE_PIXELS as f32;
+            let x = chunk.chunk.pos.x as f32 * CHUNK_EDGE_PIXELS as f32;
+            let y = chunk.chunk.pos.y as f32 * CHUNK_EDGE_PIXELS as f32;
             draw_rectangle_lines(
                 x,
                 y,
@@ -84,15 +84,14 @@ impl ClientWorld {
         let safe_min_y = rect.min.y - CHUNK_RETAIN_PADDING;
         let safe_max_y = rect.max.y + CHUNK_RETAIN_PADDING;
 
-        self.chunks.retain(|(x, y), _| {
-            *x >= safe_min_x && *x <= safe_max_x && *y >= safe_min_y && *y <= safe_max_y
+        self.chunks.retain(|pos, _| {
+            pos.x >= safe_min_x && pos.x <= safe_max_x && pos.y >= safe_min_y && pos.y <= safe_max_y
         });
     }
 
     pub fn insert_chunks(&mut self, chunks: Vec<Chunk>) {
         for chunk in chunks {
-            self.chunks
-                .insert((chunk.x, chunk.y), ClientChunk::new(chunk));
+            self.chunks.insert(chunk.pos, ClientChunk::new(chunk));
         }
     }
 
@@ -101,7 +100,7 @@ impl ClientWorld {
     }
 
     pub fn update_object(&mut self, object: Object) {
-        let Some(chunk) = self.chunks.get_mut(&(object.chunk_x, object.chunk_y)) else {
+        let Some(chunk) = self.chunks.get_mut(&object.pos.chunk) else {
             return;
         };
         chunk.update_object(object);

@@ -59,8 +59,8 @@ impl ClientChunk {
     pub fn draw(&self) {
         draw_texture_ex(
             &self.rt.texture,
-            self.chunk.x as f32 * TEXTURE_SIZE as f32,
-            self.chunk.y as f32 * TEXTURE_SIZE as f32,
+            self.chunk.pos.x as f32 * TEXTURE_SIZE as f32,
+            self.chunk.pos.y as f32 * TEXTURE_SIZE as f32,
             WHITE,
             DrawTextureParams {
                 dest_size: Some(vec2(TEXTURE_SIZE as f32, TEXTURE_SIZE as f32)),

@@ -1,11 +1,11 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::object::ObjectData;
+use crate::math::coords::ChunkLocal;
 
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub struct ObjectPlacement {
     pub data: ObjectData,
-    pub chunk: (i32, i32),
-    pub position: (u8, u8),
+    pub pos: ChunkLocal,
 }
 
 #[cfg(all(feature = "data", feature = "serde"))]
@@ -18,10 +18,10 @@ impl TryFrom<ObjectPlacement> for crate::data::entity::object::ActiveModel {
         Ok(crate::data::entity::object::ActiveModel {
             kind: sea_orm::Set(kind as u16 as i16),
             data: sea_orm::Set(data),
-            chunk_x: sea_orm::Set(p.chunk.0),
-            chunk_y: sea_orm::Set(p.chunk.1),
-            x: sea_orm::Set(p.position.0 as i16),
-            y: sea_orm::Set(p.position.1 as i16),
+            chunk_x: sea_orm::Set(p.pos.chunk.x),
+            chunk_y: sea_orm::Set(p.pos.chunk.y),
+            x: sea_orm::Set(p.pos.local.x as i16),
+            y: sea_orm::Set(p.pos.local.y as i16),
             ..Default::default()
         })
     }

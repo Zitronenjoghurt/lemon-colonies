@@ -1,5 +1,6 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::chunk::ChunkObject;
+use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords};
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 use uuid::Uuid;
 
@@ -25,10 +26,7 @@ impl From<ObjectId> for Uuid {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Object {
     pub id: ObjectId,
-    pub chunk_x: i32,
-    pub chunk_y: i32,
-    pub x: u8,
-    pub y: u8,
+    pub pos: ChunkLocal,
     pub data: ObjectData,
 }
 
@@ -102,8 +100,7 @@ impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
         Ok((
             ObjectId::from(model.id),
             ChunkObject {
-                x: model.x as u8,
-                y: model.y as u8,
+                pos: LocalCoords::new(model.x as u8, model.y as u8),
                 data,
             },
         ))
@@ -119,10 +116,10 @@ impl TryFrom<crate::data::entity::object::Model> for Object {
             serde_json::from_value(model.data).map_err(|_| CoreError::InvalidObjectData)?;
         Ok(Object {
             id: ObjectId::from(model.id),
-            chunk_x: model.chunk_x,
-            chunk_y: model.chunk_y,
-            x: model.x as u8,
-            y: model.y as u8,
+            pos: ChunkLocal::new(
+                ChunkCoords::new(model.chunk_x, model.chunk_y),
+                LocalCoords::new(model.x as u8, model.y as u8),
+            ),
             data,
         })
     }

@@ -1,5 +1,6 @@
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
+use crate::math::coords::ChunkCoords;
 use crate::types::user_info::PrivateUserInfo;
 
 pub mod chunk_update;
@@ -9,7 +10,7 @@ pub mod chunk_update;
 pub enum ServerMessage {
     Hello,
     Error(String),
-    ColonyPositions(Vec<(i32, i32)>),
+    ColonyPositions(Vec<ChunkCoords>),
     Chunks(Vec<Chunk>),
     ChunkUpdate(chunk_update::ChunkUpdateMessage),
     UserInfo(PrivateUserInfo),

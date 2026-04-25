@@ -6,6 +6,7 @@ use futures_util::StreamExt;
 use lemon_colonies_core::data::entity::object;
 use lemon_colonies_core::data::store::Store;
 use lemon_colonies_core::game::object::Object;
+use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
@@ -107,7 +108,7 @@ impl WebsocketConnection {
             .filter(|p| {
                 old_rect.is_none_or(|old| !old.contains(p)) && visibility.is_visible(p.x, p.y)
             })
-            .map(|p| (p.x, p.y))
+            .map(|p| ChunkCoords::new(p.x, p.y))
             .collect();
 
         for batch in coords.chunks(self.state.config.chunk_batch_size) {
@@ -132,13 +133,13 @@ impl WebsocketConnection {
             .state
             .service
             .chunk
-            .does_user_own_chunk(self.user_id, placement.chunk.0, placement.chunk.1)
+            .does_user_own_chunk(self.user_id, placement.pos.chunk)
             .await?;
         if !chunk_owned {
             return Err(ServerError::ChunkNotOwned);
         };
 
-        let chunk_coords = placement.chunk;
+        let chunk_coords = placement.pos.chunk;
         let active = object::ActiveModel::try_from(placement)?;
 
         let object_model = self.state.data.object.insert(active).await?;

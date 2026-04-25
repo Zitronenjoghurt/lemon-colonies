@@ -1,5 +1,6 @@
 use egui_macroquad::macroquad::prelude::*;
 use lemon_colonies_core::game::chunk::CHUNK_EDGE_PIXELS;
+use lemon_colonies_core::math::coords::WorldCoords;
 use lemon_colonies_core::math::point::Point;
 
 const MIN_ZOOM: f32 = 1.0;
@@ -41,7 +42,7 @@ impl ClientCamera {
             );
 
             let after = self.camera.screen_to_world(mouse_screen_coords());
-            self.camera.target += before - after;
+            self.camera.target += vec2(before.x - after.x, before.y - after.y);
         }
 
         if is_mouse_button_down(MouseButton::Middle) {
@@ -88,15 +89,12 @@ impl ClientCamera {
         )
     }
 
-    pub fn screen_to_world(&self, screen: Vec2) -> Vec2 {
-        self.camera.screen_to_world(screen)
+    pub fn screen_to_world(&self, screen: Vec2) -> WorldCoords {
+        let coords = self.camera.screen_to_world(screen);
+        WorldCoords::new(coords.x, coords.y)
     }
 }
 
 pub fn mouse_screen_coords() -> Vec2 {
     vec2(mouse_position().0, mouse_position().1)
-}
-
-pub fn world_to_chunk(world: Vec2) -> Vec2 {
-    (world / CHUNK_EDGE_PIXELS as f32).floor()
 }

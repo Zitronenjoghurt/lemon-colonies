@@ -1,6 +1,7 @@
 use crate::data::entity::colony;
 use crate::data::store::Store;
 use crate::error::CoreResult;
+use crate::math::coords::ChunkCoords;
 use sea_orm::prelude::Uuid;
 use sea_orm::ColumnTrait;
 use sea_orm::{DatabaseConnection, EntityTrait};
@@ -26,7 +27,7 @@ impl ColonyStore {
         }
     }
 
-    pub async fn find_coords_by_user_id(&self, user_id: Uuid) -> CoreResult<Vec<(i32, i32)>> {
+    pub async fn find_coords_by_user_id(&self, user_id: Uuid) -> CoreResult<Vec<ChunkCoords>> {
         let coords = colony::Entity::find()
             .filter(colony::Column::UserId.eq(user_id))
             .select_only()
@@ -34,7 +35,10 @@ impl ColonyStore {
             .column(colony::Column::ChunkY)
             .into_tuple::<(i32, i32)>()
             .all(&self.connection)
-            .await?;
+            .await?
+            .iter()
+            .map(|(x, y)| ChunkCoords::new(*x, *y))
+            .collect();
         Ok(coords)
     }
 }

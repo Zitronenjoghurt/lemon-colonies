@@ -2,6 +2,7 @@ use crate::data::entity::{chunk, object};
 use crate::data::store::Store;
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
+use crate::math::coords::ChunkCoords;
 use sea_orm::ColumnTrait;
 use sea_orm::QueryFilter;
 use sea_orm::{Condition, DatabaseConnection, EntityTrait, ExprTrait};
@@ -26,8 +27,8 @@ impl ChunkStore {
         }
     }
 
-    pub async fn load_existing(&self, x: i32, y: i32) -> CoreResult<Option<Chunk>> {
-        let row = chunk::Entity::find_by_id((x, y))
+    pub async fn load_existing(&self, pos: ChunkCoords) -> CoreResult<Option<Chunk>> {
+        let row = chunk::Entity::find_by_id((pos.x, pos.y))
             .find_with_related(object::Entity)
             .all(self.db())
             .await?
@@ -36,22 +37,22 @@ impl ChunkStore {
         row.map(Chunk::try_from).transpose()
     }
 
-    pub async fn load_or_generate(&self, x: i32, y: i32, world_seed: u64) -> CoreResult<Chunk> {
-        if let Some(existing) = self.load_existing(x, y).await? {
+    pub async fn load_or_generate(&self, pos: ChunkCoords, world_seed: u64) -> CoreResult<Chunk> {
+        if let Some(existing) = self.load_existing(pos).await? {
             return Ok(existing);
         }
 
-        let generated_chunk = Chunk::generate(x, y, world_seed);
+        let generated_chunk = Chunk::generate(pos, world_seed);
         let chunk_to_insert = chunk::ActiveModel::from(generated_chunk);
         let saved_chunk = self.insert(chunk_to_insert).await?;
 
         Chunk::try_from(saved_chunk)
     }
 
-    pub async fn load_many(&self, coords: &[(i32, i32)]) -> CoreResult<Vec<Chunk>> {
+    pub async fn load_many(&self, coords: &[ChunkCoords]) -> CoreResult<Vec<Chunk>> {
         let mut condition = Condition::any();
-        for &(x, y) in coords {
-            condition = condition.add(chunk::Column::X.eq(x).and(chunk::Column::Y.eq(y)));
+        for &pos in coords {
+            condition = condition.add(chunk::Column::X.eq(pos.x).and(chunk::Column::Y.eq(pos.y)));
         }
         let rows = chunk::Entity::find()
             .filter(condition)
@@ -63,17 +64,17 @@ impl ChunkStore {
 
     pub async fn load_or_generate_many(
         &self,
-        coords: &[(i32, i32)],
+        coords: &[ChunkCoords],
         world_seed: u64,
     ) -> CoreResult<Vec<Chunk>> {
         let existing = self.load_many(coords).await?;
-        let existing_set: std::collections::HashSet<(i32, i32)> =
-            existing.iter().map(|c| (c.x, c.y)).collect();
+        let existing_set: std::collections::HashSet<ChunkCoords> =
+            existing.iter().map(|c| c.pos).collect();
 
         let mut to_insert = Vec::new();
-        for &(x, y) in coords {
-            if !existing_set.contains(&(x, y)) {
-                to_insert.push(Chunk::generate(x, y, world_seed));
+        for &pos in coords {
+            if !existing_set.contains(&pos) {
+                to_insert.push(Chunk::generate(pos, world_seed));
             }
         }
 

@@ -1,9 +1,10 @@
 use crate::ws::fetchable::Fetchable;
+use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::types::user_info::PrivateUserInfo;
 
 #[derive(Default)]
 pub struct ClientData {
-    pub colony_positions: Fetchable<Vec<(i32, i32)>>,
+    pub colony_positions: Fetchable<Vec<ChunkCoords>>,
     pub user_info: Fetchable<PrivateUserInfo>,
 }
 

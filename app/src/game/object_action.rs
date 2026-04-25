@@ -1,26 +1,27 @@
 use crate::game::atlas::AtlasStore;
-use crate::game::camera::{mouse_screen_coords, world_to_chunk, ClientCamera};
+use crate::game::camera::{mouse_screen_coords, ClientCamera};
 use crate::game::sprite::{HasSprite, SpriteDraw};
 use crate::ws::Ws;
 use egui_macroquad::macroquad::camera::set_default_camera;
 use egui_macroquad::macroquad::color::Color;
 use egui_macroquad::macroquad::input::{is_mouse_button_pressed, MouseButton};
 use egui_macroquad::macroquad::logging::debug;
-use egui_macroquad::macroquad::math::vec2;
-use lemon_colonies_core::game::chunk::CHUNK_EDGE_PIXELS;
 use lemon_colonies_core::game::object::ObjectData;
+use lemon_colonies_core::math::coords::WorldCoords;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 
 #[derive(Default)]
 pub struct ObjectAction {
     target_data: Option<ObjectData>,
     mode: Option<ObjectActionMode>,
+    continuous: bool,
 }
 
 impl ObjectAction {
     pub fn place(&mut self, data: ObjectData) {
         self.target_data = Some(data);
         self.mode = Some(ObjectActionMode::Place);
+        self.continuous = true;
     }
 
     pub fn update(&mut self, ws: &mut Ws, camera: &ClientCamera) {
@@ -46,34 +47,30 @@ impl ObjectAction {
         if !is_mouse_button_pressed(MouseButton::Left) {
             return;
         }
-        let Some(data) = self.target_data.take() else {
+        let Some(data) = &self.target_data else {
             return;
         };
 
         let mouse_world = camera.screen_to_world(mouse_screen_coords());
 
         let offset = data.pivot_center_offset();
-        let world_coords = mouse_world.floor() + vec2(offset.0, offset.1);
-        let chunk_coords = world_to_chunk(world_coords);
-
-        let chunk = (chunk_coords.x as i32, chunk_coords.y as i32);
-        let position = (
-            (world_coords.x as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
-            (world_coords.y as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
-        );
+        let world_coords = mouse_world + WorldCoords::new(offset.0, offset.1);
+        let pos = world_coords.chunk_local();
 
         debug!(
-            "Tried to place object at {:?} in chunk {:?} (mouse world: {})",
-            position, chunk, mouse_world
+            "Tried to place object at {:?} (mouse world: {:?})",
+            pos, mouse_world
         );
 
         ws.place_object(ObjectPlacement {
-            data,
-            chunk,
-            position,
+            data: data.clone(),
+            pos,
         });
 
-        self.mode = None;
+        if !self.continuous {
+            self.target_data = None;
+            self.mode = None;
+        }
     }
 }
 
@@ -88,7 +85,7 @@ impl ObjectAction {
 
         let mouse_world = camera.screen_to_world(mouse_screen_coords());
         let offset = object.pivot_center_offset();
-        let anchor = mouse_world.floor() + vec2(offset.0, offset.1);
+        let anchor = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
         SpriteDraw::new(object.sprite(), anchor)
             .with_tint(Color::new(1.0, 1.0, 1.0, 0.5))
             .draw(atlas);

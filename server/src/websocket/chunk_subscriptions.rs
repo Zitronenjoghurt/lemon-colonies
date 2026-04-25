@@ -1,6 +1,6 @@
 use crate::websocket::connection::ConnectionId;
 use dashmap::DashMap;
-use lemon_colonies_core::math::point::Point;
+use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 
 #[derive(Default)]
@@ -20,10 +20,10 @@ impl ChunkSubscriptions {
         self.subscriptions.remove(&id);
     }
 
-    pub fn connections_for_chunk(&self, coords: &Point<i32>) -> Vec<ConnectionId> {
+    pub fn connections_for_chunk(&self, coords: ChunkCoords) -> Vec<ConnectionId> {
         self.subscriptions
             .iter()
-            .filter(|entry| entry.value().contains(coords))
+            .filter(|entry| entry.value().contains(&coords.point()))
             .map(|entry| *entry.key())
             .collect()
     }

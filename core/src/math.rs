@@ -1,6 +1,7 @@
 use num_traits::Num;
 
 pub mod circle;
+pub mod coords;
 pub mod point;
 pub mod rect;
 

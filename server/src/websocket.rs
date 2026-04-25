@@ -8,7 +8,6 @@ use dashmap::DashMap;
 use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use lemon_colonies_core::data::store::Store;
-use lemon_colonies_core::math::point::Point;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdateMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
@@ -107,14 +106,18 @@ impl Websocket {
     }
 
     pub fn send_chunk_update(&self, update: ChunkUpdateMessage) {
-        let coords = Point::new(update.coords.0, update.coords.1);
-        let connections = self.chunk_subscriptions.connections_for_chunk(&coords);
+        let connections = self
+            .chunk_subscriptions
+            .connections_for_chunk(update.coords);
 
         if connections.len() == 1 {
             let connection_id = connections.first().unwrap();
             self.send_to_connection(*connection_id, ServerMessage::ChunkUpdate(update))
         } else {
-            for connection_id in self.chunk_subscriptions.connections_for_chunk(&coords) {
+            for connection_id in self
+                .chunk_subscriptions
+                .connections_for_chunk(update.coords)
+            {
                 self.send_to_connection(connection_id, ServerMessage::ChunkUpdate(update.clone()))
             }
         }

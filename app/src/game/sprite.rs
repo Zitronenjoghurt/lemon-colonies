@@ -4,6 +4,7 @@ use egui_macroquad::macroquad::prelude::{
 };
 use lemon_colonies_core::game::object::ObjectData;
 use lemon_colonies_core::game::terrain::Terrain;
+use lemon_colonies_core::math::coords::WorldCoords;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sprite {
@@ -52,13 +53,13 @@ impl Sprite {
 
 pub struct SpriteDraw {
     pub sprite: Sprite,
-    pub anchor: Vec2,
+    pub anchor: WorldCoords,
     pub sort_y: f32,
     pub tint: Color,
 }
 
 impl SpriteDraw {
-    pub fn new(sprite: Sprite, anchor: Vec2) -> Self {
+    pub fn new(sprite: Sprite, anchor: WorldCoords) -> Self {
         let sort_y = anchor.y + sprite.y_sort_offset;
         Self {
             sprite,

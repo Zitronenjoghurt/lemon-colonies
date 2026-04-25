@@ -1,4 +1,3 @@
-use crate::game::camera::world_to_chunk;
 use crate::game::Game;
 use crate::settings::Settings;
 use egui_macroquad::egui::{Grid, Response, Ui, Widget};
@@ -34,7 +33,7 @@ impl Widget for DebugWidget<'_> {
                 ui.label(format!("({:.2}, {:.2})", mouse_world.x, mouse_world.y));
                 ui.end_row();
 
-                let mouse_chunk = world_to_chunk(mouse_world);
+                let mouse_chunk = mouse_world.chunk();
                 ui.label("Mouse pos. (chunk)");
                 ui.label(format!("({:.2}, {:.2})", mouse_chunk.x, mouse_chunk.y));
                 ui.end_row();

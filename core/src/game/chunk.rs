@@ -1,6 +1,7 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::object::{Object, ObjectData, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
+use crate::math::coords::{ChunkCoords, LocalCoords};
 use std::collections::HashMap;
 use strum::EnumCount;
 
@@ -11,17 +12,16 @@ pub const CHUNK_SIZE: usize = CHUNK_EDGE_LENGTH * CHUNK_EDGE_LENGTH;
 #[derive(Clone)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub struct Chunk {
-    pub x: i32,
-    pub y: i32,
+    pub pos: ChunkCoords,
     pub objects: HashMap<ObjectId, ChunkObject>,
     pub terrain: [Terrain; CHUNK_SIZE],
 }
 
 impl Chunk {
-    pub fn generate(x: i32, y: i32, world_seed: u64) -> Self {
+    pub fn generate(pos: ChunkCoords, world_seed: u64) -> Self {
         let chunk_seed = world_seed
-            .wrapping_add((x as u64).wrapping_mul(0x51492FB0))
-            .wrapping_add((y as u64).wrapping_mul(0x9E3779B9));
+            .wrapping_add((pos.x as u64).wrapping_mul(0x51492FB0))
+            .wrapping_add((pos.y as u64).wrapping_mul(0x9E3779B9));
 
         let mut rng = fastrand::Rng::with_seed(chunk_seed);
         let terrain = core::array::from_fn(|_| {
@@ -30,8 +30,7 @@ impl Chunk {
         });
 
         Self {
-            x,
-            y,
+            pos,
             objects: HashMap::new(),
             terrain,
         }
@@ -43,15 +42,13 @@ impl Chunk {
 
     pub fn update_object(&mut self, object: Object) {
         if let Some(obj) = self.objects.get_mut(&object.id) {
-            obj.x = object.x;
-            obj.y = object.y;
+            obj.pos = object.pos.local;
             obj.data = object.data;
         } else {
             self.objects.insert(
                 object.id,
                 ChunkObject {
-                    x: object.x,
-                    y: object.y,
+                    pos: object.pos.local,
                     data: object.data,
                 },
             );
@@ -62,8 +59,7 @@ impl Chunk {
 #[derive(Clone)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub struct ChunkObject {
-    pub x: u8,
-    pub y: u8,
+    pub pos: LocalCoords,
     pub data: ObjectData,
 }
 
@@ -108,8 +104,7 @@ impl
             .collect::<CoreResult<HashMap<_, _>>>()?;
 
         Ok(Self {
-            x: chunk.x,
-            y: chunk.y,
+            pos: ChunkCoords::new(chunk.x, chunk.y),
             terrain,
             objects,
         })
@@ -125,8 +120,8 @@ impl From<Chunk> for crate::data::entity::chunk::ActiveModel {
             .flat_map(|t| (*t as u16).to_le_bytes())
             .collect();
         crate::data::entity::chunk::ActiveModel {
-            x: sea_orm::Set(chunk.x),
-            y: sea_orm::Set(chunk.y),
+            x: sea_orm::Set(chunk.pos.x),
+            y: sea_orm::Set(chunk.pos.y),
             terrain: sea_orm::Set(terrain),
             ..Default::default()
         }

@@ -32,17 +32,16 @@ impl UserService {
 
     async fn initiate_new_user(&self, user: user::Model) -> CoreResult<user::Model> {
         let colony_count = self.data.colony.count_all().await?;
-        let (chunk_x, chunk_y) =
-            determine_new_colony_position(colony_count, self.config.world_seed);
+        let pos = determine_new_colony_position(colony_count, self.config.world_seed);
         let chunk = self
             .data
             .chunk
-            .load_or_generate(chunk_x, chunk_y, self.config.world_seed)
+            .load_or_generate(pos, self.config.world_seed)
             .await?;
 
         let new_colony = colony::ActiveModel {
-            chunk_x: Set(chunk.x),
-            chunk_y: Set(chunk.y),
+            chunk_x: Set(chunk.pos.x),
+            chunk_y: Set(chunk.pos.y),
             user_id: Set(user.id),
             ..Default::default()
         };
