@@ -1,5 +1,7 @@
+use crate::fps_counter::FpsCounter;
 use crate::game::Game;
 use crate::http::Http;
+use crate::server_time::ServerTime;
 use crate::settings::Settings;
 use crate::ui::state::UiState;
 use crate::ui::{setup_egui, UiViewer};
@@ -17,6 +19,8 @@ pub struct App {
     toasts: Toasts,
     ui: UiState,
     ws: Ws,
+    server_time: ServerTime,
+    fps_counter: FpsCounter,
     egui_initialized: bool,
 }
 
@@ -32,6 +36,8 @@ impl App {
             toasts: Toasts::new(),
             ui: UiState::load(),
             ws,
+            server_time: ServerTime::default(),
+            fps_counter: FpsCounter::default(),
             egui_initialized: false,
         })
     }
@@ -49,6 +55,12 @@ impl App {
         self.http.update(&mut self.toasts);
         self.update_ws();
         self.ui.update();
+        self.server_time.update(&mut self.ws);
+        self.fps_counter.update();
+
+        if self.server_time.is_timed_out() {
+            self.ws.disconnect("Connection timed out");
+        }
     }
 
     pub fn render_game(&mut self) {
@@ -65,8 +77,10 @@ impl App {
             }
             let mut viewer = UiViewer {
                 settings: &mut self.settings,
+                fps_counter: self.fps_counter,
                 game: &mut self.game,
                 http: &mut self.http,
+                server_time: &self.server_time,
                 state: &mut self.ui,
                 toasts: &mut self.toasts,
                 ws: &mut self.ws,
@@ -90,7 +104,12 @@ impl App {
 
     pub fn handle_message(&mut self, message: ServerMessage) {
         match message {
-            ServerMessage::Hello => info!("Hello from server!"),
+            ServerMessage::Pong {
+                client_time,
+                server_time,
+            } => {
+                self.server_time.handle_pong(client_time, server_time);
+            }
             ServerMessage::Error(error) => {
                 self.toasts.error(error);
             }

@@ -4,8 +4,10 @@ use egui_macroquad::macroquad::prelude::*;
 
 mod app;
 mod bindings;
+mod fps_counter;
 mod game;
 mod http;
+mod server_time;
 mod settings;
 mod storage;
 mod ui;

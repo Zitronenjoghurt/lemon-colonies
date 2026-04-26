@@ -1,3 +1,4 @@
+use crate::fps_counter::FpsCounter;
 use crate::ui::widgets::profile_menu::ProfileMenu;
 use crate::ui::widgets::window_button::WindowButton;
 use crate::ui::windows::WindowId;
@@ -11,8 +12,10 @@ mod windows;
 
 pub struct UiViewer<'a> {
     pub settings: &'a mut crate::settings::Settings,
+    pub fps_counter: FpsCounter,
     pub game: &'a mut crate::game::Game,
     pub http: &'a mut crate::http::Http,
+    pub server_time: &'a crate::server_time::ServerTime,
     pub state: &'a mut state::UiState,
     pub toasts: &'a mut egui_notify::Toasts,
     pub ws: &'a mut crate::ws::Ws,

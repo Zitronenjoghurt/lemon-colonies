@@ -6,7 +6,7 @@ pub mod object_placement;
 
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub enum ClientMessage {
-    Hello,
+    Ping { client_time: f64 },
     ColonyPositions,
     ObjectPlacement(ObjectPlacement),
     SubscribeToChunks(Rect<i32>),

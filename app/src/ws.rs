@@ -81,8 +81,8 @@ impl Ws {
         }
     }
 
-    pub fn hello(&mut self) {
-        self.send_bytes(&ClientMessage::Hello.as_bytes());
+    pub fn ping(&mut self, client_time: f64) {
+        self.send_bytes(&ClientMessage::Ping { client_time }.as_bytes());
     }
 
     pub fn subscribe_chunks(&mut self, view_rect: Rect<i32>) {

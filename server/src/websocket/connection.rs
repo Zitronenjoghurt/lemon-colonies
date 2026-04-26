@@ -12,10 +12,14 @@ use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdateMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tokio::time::timeout;
 use tower_sessions_sqlx_store::sqlx::types::Uuid;
-use tracing::error;
+use tracing::{error, info};
 
 pub type ConnectionId = Uuid;
+
+const IDLE_TIMEOUT: Duration = Duration::from_secs(60);
 
 pub struct WebsocketConnection {
     id: ConnectionId,
@@ -29,8 +33,27 @@ impl WebsocketConnection {
     }
 
     pub async fn handle_receive(self, mut ws_receive: SplitStream<WebSocket>) {
-        while let Some(Ok(message)) = ws_receive.next().await {
-            match message {
+        loop {
+            let msg = match timeout(IDLE_TIMEOUT, ws_receive.next()).await {
+                Ok(Some(Ok(message))) => message,
+                Ok(Some(Err(err))) => {
+                    error!("[{}] WebSocket error: {err}", self.user_id);
+                    break;
+                }
+                Ok(None) => {
+                    info!("[{}] WebSocket stream closed", self.user_id);
+                    break;
+                }
+                Err(_) => {
+                    info!(
+                        "[{}] Connection timed out (idle for {IDLE_TIMEOUT:?})",
+                        self.user_id
+                    );
+                    break;
+                }
+            };
+
+            match msg {
                 Message::Binary(data) => match ClientMessage::from_bytes(data.as_ref()) {
                     Ok(message) => {
                         if let Err(err) = self.handle_client_message(message).await {
@@ -48,9 +71,12 @@ impl WebsocketConnection {
                         error!("[{}] Failed to decode message: {e}", self.user_id);
                     }
                 },
-                Message::Close(_) => break,
+                Message::Close(reason) => {
+                    info!("[{}] Client closed connection: {reason:?}", self.user_id);
+                    break;
+                }
                 _ => {}
-            };
+            }
         }
     }
 
@@ -64,8 +90,8 @@ impl WebsocketConnection {
 
     async fn handle_client_message(&self, message: ClientMessage) -> ServerResult<()> {
         match message {
+            ClientMessage::Ping { client_time } => self.handle_ping(client_time).await?,
             ClientMessage::ColonyPositions => self.handle_colony_positions().await?,
-            ClientMessage::Hello => self.respond(ServerMessage::Hello),
             ClientMessage::SubscribeToChunks(rect) => self.handle_chunk_subscription(rect).await?,
             ClientMessage::ObjectPlacement(placement) => {
                 self.handle_object_placement(placement).await?
@@ -79,6 +105,18 @@ impl WebsocketConnection {
 
 /// Message handling
 impl WebsocketConnection {
+    async fn handle_ping(&self, client_time: f64) -> ServerResult<()> {
+        let server_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+        self.respond(ServerMessage::Pong {
+            client_time,
+            server_time,
+        });
+        Ok(())
+    }
+
     async fn handle_colony_positions(&self) -> ServerResult<()> {
         let coords = self
             .state

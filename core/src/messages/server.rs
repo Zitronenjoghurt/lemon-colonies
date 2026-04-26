@@ -8,7 +8,7 @@ pub mod chunk_update;
 #[derive(Clone)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub enum ServerMessage {
-    Hello,
+    Pong { client_time: f64, server_time: f64 },
     Error(String),
     ColonyPositions(Vec<ChunkCoords>),
     Chunks(Vec<Chunk>),

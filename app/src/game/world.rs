@@ -12,7 +12,7 @@ use lemon_colonies_core::math::coords::{ChunkCoords, WorldCoords};
 use lemon_colonies_core::math::rect::Rect;
 use std::collections::HashMap;
 
-const CHUNK_RETAIN_PADDING: i32 = 20;
+const CHUNK_RETAIN_PADDING: i32 = 10;
 const CHUNK_BORDER_THICKNESS: f32 = 1.0;
 const TERRITORY_OUTLINE_THICKNESS: f32 = 2.0;
 const TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 6.0, 0.0, 0.8);
@@ -25,6 +25,7 @@ pub struct WorldDrawSettings {
 #[derive(Default)]
 pub struct ClientWorld {
     chunks: HashMap<ChunkCoords, ClientChunk>,
+    object_count: usize,
 }
 
 impl ClientWorld {
@@ -181,12 +182,14 @@ impl ClientWorld {
         self.chunks.retain(|pos, _| {
             pos.x >= safe_min_x && pos.x <= safe_max_x && pos.y >= safe_min_y && pos.y <= safe_max_y
         });
+        self.recalculate_object_count();
     }
 
     pub fn insert_chunks(&mut self, chunks: Vec<Chunk>) {
         for chunk in chunks {
             self.chunks.insert(chunk.pos, ClientChunk::new(chunk));
         }
+        self.recalculate_object_count();
     }
 
     pub fn get_chunk(&self, pos: ChunkCoords) -> Option<&Chunk> {
@@ -197,11 +200,20 @@ impl ClientWorld {
         self.chunks.len()
     }
 
+    pub fn object_count(&self) -> usize {
+        self.object_count
+    }
+
+    fn recalculate_object_count(&mut self) {
+        self.object_count = self.chunks.values().map(|c| c.chunk.objects.len()).sum();
+    }
+
     pub fn update_object(&mut self, object: Object) {
         let Some(chunk) = self.chunks.get_mut(&object.pos.chunk) else {
             return;
         };
         chunk.update_object(object);
+        self.recalculate_object_count();
     }
 
     pub fn rect_collides_with_object(&self, rect: Rect<f32>) -> bool {
