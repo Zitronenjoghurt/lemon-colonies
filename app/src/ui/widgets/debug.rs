@@ -1,9 +1,9 @@
 use crate::fps_counter::FpsCounter;
+use crate::game::camera::mouse_screen_coords;
 use crate::game::Game;
 use crate::server_time::{DateTime, ServerTime};
 use crate::settings::Settings;
 use egui_macroquad::egui::{Grid, Response, Ui, Widget};
-use egui_macroquad::macroquad::prelude::{mouse_position, vec2};
 use lemon_colonies_core::game::object::ObjectData;
 
 pub struct DebugWidget<'a> {
@@ -69,7 +69,7 @@ impl Widget for DebugWidget<'_> {
             ui.separator();
 
             Grid::new("debug_mouse_grid").num_columns(2).show(ui, |ui| {
-                let mouse_screen = vec2(mouse_position().0, mouse_position().1);
+                let mouse_screen = mouse_screen_coords();
                 ui.label("Mouse pos. (screen)");
                 ui.label(format!("({:.2}, {:.2})", mouse_screen.x, mouse_screen.y));
                 ui.end_row();
@@ -81,7 +81,12 @@ impl Widget for DebugWidget<'_> {
 
                 let mouse_chunk = mouse_world.chunk();
                 ui.label("Mouse pos. (chunk)");
-                ui.label(format!("({:.2}, {:.2})", mouse_chunk.x, mouse_chunk.y));
+                ui.label(format!("({}, {})", mouse_chunk.x, mouse_chunk.y));
+                ui.end_row();
+
+                let mouse_local = mouse_world.local();
+                ui.label("Mouse pos. (local)");
+                ui.label(format!("({}, {})", mouse_local.x, mouse_local.y));
                 ui.end_row();
             });
 

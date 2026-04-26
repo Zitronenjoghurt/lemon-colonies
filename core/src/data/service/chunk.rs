@@ -2,7 +2,7 @@ use crate::data::entity::{colony, colony_chunk};
 use crate::data::store::Store;
 use crate::data::Data;
 use crate::error::{CoreError, CoreResult};
-use crate::math::coords::{ChunkCoords, WorldCoords};
+use crate::math::coords::ChunkCoords;
 use crate::math::rect::Rect;
 use crate::types::chunk_visibility::ChunkVisibility;
 use futures::TryStreamExt;
@@ -60,9 +60,7 @@ impl ChunkService {
     }
 
     pub async fn validate_chunks_owned(&self, user_id: Uuid, rect: Rect<f32>) -> CoreResult<()> {
-        let min_chunk = WorldCoords::new(rect.min.x, rect.min.y).chunk();
-        let max_chunk = WorldCoords::new(rect.max.x, rect.max.y).chunk();
-
+        let (min_chunk, max_chunk) = rect.chunk_range();
         for chunk_y in min_chunk.y..=max_chunk.y {
             for chunk_x in min_chunk.x..=max_chunk.x {
                 self.validate_chunk_owned(user_id, ChunkCoords::new(chunk_x, chunk_y))

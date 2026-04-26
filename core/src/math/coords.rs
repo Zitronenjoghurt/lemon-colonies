@@ -25,8 +25,8 @@ impl WorldCoords {
 
     pub fn local(&self) -> LocalCoords {
         LocalCoords::new(
-            (self.x as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
-            (self.y as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
+            (self.x.floor() as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
+            (self.y.floor() as i32).rem_euclid(CHUNK_EDGE_PIXELS as i32) as u8,
         )
     }
 

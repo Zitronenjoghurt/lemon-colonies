@@ -8,7 +8,7 @@ use egui_macroquad::macroquad::prelude::{
 };
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::Object;
-use lemon_colonies_core::math::coords::{ChunkCoords, WorldCoords};
+use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use std::collections::HashMap;
 
@@ -217,9 +217,7 @@ impl ClientWorld {
     }
 
     pub fn rect_collides_with_object(&self, rect: Rect<f32>) -> bool {
-        let min_chunk = WorldCoords::new(rect.min.x, rect.min.y).chunk();
-        let max_chunk = WorldCoords::new(rect.max.x, rect.max.y).chunk();
-
+        let (min_chunk, max_chunk) = rect.chunk_range();
         for cy in min_chunk.y..=max_chunk.y {
             for cx in min_chunk.x..=max_chunk.x {
                 let Some(chunk) = self.get_chunk(ChunkCoords::new(cx, cy)) else {

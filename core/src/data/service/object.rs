@@ -3,7 +3,7 @@ use crate::data::store::Store;
 use crate::data::Data;
 use crate::error::{CoreError, CoreResult};
 use crate::game::object::ObjectData;
-use crate::math::coords::{ChunkCoords, LocalCoords, WorldCoords};
+use crate::math::coords::{ChunkCoords, LocalCoords};
 use crate::math::rect::Rect;
 use futures::TryStreamExt;
 use sea_orm::{ColumnTrait, ExprTrait};
@@ -19,8 +19,7 @@ impl ObjectService {
     }
 
     pub async fn validate_placement_collision(&self, rect: Rect<f32>) -> CoreResult<()> {
-        let min_chunk = WorldCoords::new(rect.min.x, rect.min.y).chunk();
-        let max_chunk = WorldCoords::new(rect.max.x, rect.max.y).chunk();
+        let (min_chunk, max_chunk) = rect.chunk_range();
         for chunk_y in min_chunk.y..=max_chunk.y {
             for chunk_x in min_chunk.x..=max_chunk.x {
                 let chunk_coords = ChunkCoords::new(chunk_x, chunk_y);

@@ -1,3 +1,5 @@
+use crate::game::chunk::CHUNK_EDGE_PIXELS;
+use crate::math::coords::{ChunkCoords, WorldCoords};
 use crate::math::iter_int_range;
 use crate::math::point::Point;
 use num_traits::Num;
@@ -70,5 +72,26 @@ impl<N: Num + Copy + PartialOrd> Rect<N> {
             && self.max.x <= other.max.x
             && self.min.y >= other.min.y
             && self.max.y <= other.max.y
+    }
+}
+
+impl Rect<f32> {
+    pub fn chunk_range(&self) -> (ChunkCoords, ChunkCoords) {
+        let min = WorldCoords::new(self.min.x, self.min.y).chunk();
+        let max_x = self.max.x / CHUNK_EDGE_PIXELS as f32;
+        let max_y = self.max.y / CHUNK_EDGE_PIXELS as f32;
+        let max = ChunkCoords::new(
+            if max_x == max_x.floor() {
+                max_x as i32 - 1
+            } else {
+                max_x.floor() as i32
+            },
+            if max_y == max_y.floor() {
+                max_y as i32 - 1
+            } else {
+                max_y.floor() as i32
+            },
+        );
+        (min, max)
     }
 }

@@ -1,6 +1,6 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::object::ObjectData;
-use crate::math::coords::{ChunkCoords, ChunkLocal, WorldCoords};
+use crate::math::coords::{ChunkLocal, WorldCoords};
 use crate::math::rect::Rect;
 
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
@@ -16,14 +16,6 @@ impl ObjectPlacement {
 
     pub fn collision_rect(&self) -> Rect<f32> {
         self.data.collision_rect(self.pos.world())
-    }
-
-    pub fn affected_chunks_min_max(&self) -> (ChunkCoords, ChunkCoords) {
-        let rect = self.collision_rect();
-        (
-            WorldCoords::new(rect.min.x, rect.min.y).chunk(),
-            WorldCoords::new(rect.max.x, rect.max.y).chunk(),
-        )
     }
 }
 

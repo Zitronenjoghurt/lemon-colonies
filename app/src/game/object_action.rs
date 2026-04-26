@@ -83,8 +83,7 @@ impl ObjectAction {
         let world_coords = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
         let collision_rect = object.collision_rect(world_coords);
 
-        let chunk_min = WorldCoords::new(collision_rect.min.x, collision_rect.min.y).chunk();
-        let chunk_max = WorldCoords::new(collision_rect.max.x, collision_rect.max.y).chunk();
+        let (chunk_min, chunk_max) = collision_rect.chunk_range();
         for chunk_y in chunk_min.y..=chunk_max.y {
             for chunk_x in chunk_min.x..=chunk_max.x {
                 let chunk_coords = ChunkCoords::new(chunk_x, chunk_y);
