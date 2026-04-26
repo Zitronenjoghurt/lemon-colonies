@@ -37,10 +37,6 @@ impl WorldCoords {
     pub fn floor(&self) -> WorldCoords {
         WorldCoords::new(self.x.floor(), self.y.floor())
     }
-
-    pub fn ceil(&self) -> WorldCoords {
-        WorldCoords::new(self.x.ceil(), self.y.ceil())
-    }
 }
 
 impl From<WorldCoords> for (f32, f32) {

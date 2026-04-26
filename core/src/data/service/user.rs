@@ -6,7 +6,7 @@ use crate::game::colony::placement::determine_new_colony_position;
 use crate::game::config::GameConfig;
 use crate::math::coords::ChunkCoords;
 use crate::types::user_info::{PrivateUserInfo, PublicUserInfo};
-use sea_orm::{ColumnTrait, Set};
+use sea_orm::{ColumnTrait, IntoActiveModel, Set};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -88,5 +88,18 @@ impl UserService {
             .into_iter()
             .map(|c| ChunkCoords::new(c.chunk_x, c.chunk_y))
             .collect())
+    }
+
+    pub async fn log_rate_limit_infraction(&self, user_id: Uuid) -> CoreResult<u16> {
+        let Some(user) = self.data.user.find_by_id(user_id).await? else {
+            return Ok(0);
+        };
+
+        let infractions = user.rate_limit_infractions.saturating_add(1);
+        let mut active = user.into_active_model();
+        active.rate_limit_infractions = Set(infractions);
+        self.data.user.update(active).await?;
+
+        Ok(infractions as u16)
     }
 }

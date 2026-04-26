@@ -23,6 +23,8 @@ pub enum ApiError {
     OauthTokenExchange,
     #[error("Session error: {0}")]
     Session(#[from] tower_sessions::session::Error),
+    #[error("You have permanently banned for rate limit abuse")]
+    BannedRateLimitAbuse,
     #[error("Too many connections")]
     TooManyConnections,
     #[error("Unauthorized")]
@@ -32,7 +34,8 @@ pub enum ApiError {
 impl ApiError {
     pub fn status_code(&self) -> StatusCode {
         match self {
-            Self::DiscordUserInvalid
+            Self::BannedRateLimitAbuse
+            | Self::DiscordUserInvalid
             | Self::InvalidCsrfToken
             | Self::MissingCsrfToken
             | Self::MissingPkceVerifier
@@ -47,7 +50,8 @@ impl ApiError {
 
     pub fn should_log(&self) -> bool {
         match self {
-            Self::DiscordUserInvalid
+            Self::BannedRateLimitAbuse
+            | Self::DiscordUserInvalid
             | Self::InvalidCsrfToken
             | Self::MissingCsrfToken
             | Self::MissingPkceVerifier
@@ -62,7 +66,8 @@ impl ApiError {
 
     pub fn user_message(&self) -> String {
         match self {
-            Self::DiscordUserInvalid
+            Self::BannedRateLimitAbuse
+            | Self::DiscordUserInvalid
             | Self::InvalidCsrfToken
             | Self::MissingCsrfToken
             | Self::MissingPkceVerifier

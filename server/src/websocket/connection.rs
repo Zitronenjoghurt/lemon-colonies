@@ -1,5 +1,7 @@
+use crate::config::Config;
 use crate::error::{ServerError, ServerResult};
 use crate::state::ServerState;
+use crate::websocket::rate_limiter::{RateLimitResult, RateLimiter};
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
@@ -12,6 +14,7 @@ use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdateMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
+use std::ops::ControlFlow;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::timeout;
 use tower_sessions_sqlx_store::sqlx::types::Uuid;
@@ -25,14 +28,20 @@ pub struct WebsocketConnection {
     id: ConnectionId,
     user_id: Uuid,
     state: ServerState,
+    rate_limiter: RateLimiter,
 }
 
 impl WebsocketConnection {
-    pub fn new(id: ConnectionId, user_id: Uuid, state: ServerState) -> Self {
-        Self { id, user_id, state }
+    pub fn new(config: &Config, id: ConnectionId, user_id: Uuid, state: ServerState) -> Self {
+        Self {
+            id,
+            user_id,
+            state,
+            rate_limiter: RateLimiter::new(config),
+        }
     }
 
-    pub async fn handle_receive(self, mut ws_receive: SplitStream<WebSocket>) {
+    pub async fn handle_receive(mut self, mut ws_receive: SplitStream<WebSocket>) {
         loop {
             let msg = match timeout(IDLE_TIMEOUT, ws_receive.next()).await {
                 Ok(Some(Ok(message))) => message,
@@ -54,23 +63,7 @@ impl WebsocketConnection {
             };
 
             match msg {
-                Message::Binary(data) => match ClientMessage::from_bytes(data.as_ref()) {
-                    Ok(message) => {
-                        if let Err(err) = self.handle_client_message(message).await {
-                            if err.is_user_error() {
-                                self.respond(ServerMessage::Error(err.message()));
-                            } else {
-                                error!(
-                                    "[{}] An error occurred on message handling: {err}",
-                                    self.user_id
-                                );
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        error!("[{}] Failed to decode message: {e}", self.user_id);
-                    }
-                },
+                Message::Binary(data) if self.handle_binary(&data).await.is_break() => break,
                 Message::Close(reason) => {
                     info!("[{}] Client closed connection: {reason:?}", self.user_id);
                     break;
@@ -78,6 +71,62 @@ impl WebsocketConnection {
                 _ => {}
             }
         }
+    }
+
+    async fn handle_binary(&mut self, data: &[u8]) -> ControlFlow<()> {
+        let message = match ClientMessage::from_bytes(data) {
+            Ok(msg) => msg,
+            Err(e) => {
+                error!("[{}] Failed to decode message: {e}", self.user_id);
+                return ControlFlow::Continue(());
+            }
+        };
+
+        match self.rate_limiter.check(&self.state.config, &message) {
+            RateLimitResult::Allow => {}
+            RateLimitResult::Drop => {
+                self.respond(ServerMessage::Error(
+                    "Too many requests. Please wait a moment.".into(),
+                ));
+                return ControlFlow::Continue(());
+            }
+            RateLimitResult::Warn => {
+                self.respond(ServerMessage::Error(
+                    "You are being rate limited. Continued excessive requests may result in a disconnect.".into(),
+                ));
+                return ControlFlow::Continue(());
+            }
+            RateLimitResult::Disconnect => {
+                let infractions = self
+                    .state
+                    .service
+                    .user
+                    .log_rate_limit_infraction(self.user_id)
+                    .await
+                    .unwrap_or_default();
+                self.respond(ServerMessage::Error(
+                    "Connection closed due to excessive requests. Continued abuse will lead to a permanent ban.".into(),
+                ));
+                info!(
+                    "[{}] Disconnected for rate limit abuse, {infractions} infractions.",
+                    self.user_id
+                );
+                return ControlFlow::Break(());
+            }
+        }
+
+        if let Err(err) = self.handle_client_message(message).await {
+            if err.is_user_error() {
+                self.respond(ServerMessage::Error(err.message()));
+            } else {
+                error!(
+                    "[{}] An error occurred on message handling: {err}",
+                    self.user_id
+                );
+            }
+        }
+
+        ControlFlow::Continue(())
     }
 
     fn respond(&self, message: ServerMessage) {

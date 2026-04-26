@@ -19,6 +19,7 @@ use uuid::Uuid;
 
 mod chunk_subscriptions;
 mod connection;
+mod rate_limiter;
 
 #[derive(Default)]
 pub struct Websocket {
@@ -142,7 +143,17 @@ pub async fn ws_handler(
         return Err(ApiError::TooManyConnections);
     }
 
-    Ok(ws.on_upgrade(move |socket| handle_socket(socket, state.clone(), user.id)))
+    if user.rate_limit_infractions >= 3 {
+        return Err(ApiError::BannedRateLimitAbuse);
+    }
+
+    let message_size = state.config.max_ws_message_size_kb * 1024;
+    let write_buffer_size = state.config.max_ws_outbound_buffer_size_kb * 1024;
+    Ok(ws
+        .max_message_size(message_size)
+        .max_frame_size(message_size)
+        .write_buffer_size(write_buffer_size)
+        .on_upgrade(move |socket| handle_socket(socket, state.clone(), user.id)))
 }
 
 async fn handle_socket(socket: WebSocket, state: ServerState, user_id: Uuid) {
@@ -151,8 +162,8 @@ async fn handle_socket(socket: WebSocket, state: ServerState, user_id: Uuid) {
 
     let state_clone = state.clone();
     let send_fut = handle_send(user_id, ws_send, rx);
-    let recv_fut =
-        WebsocketConnection::new(connection_id, user_id, state_clone).handle_receive(ws_receive);
+    let recv_fut = WebsocketConnection::new(&state.config, connection_id, user_id, state_clone)
+        .handle_receive(ws_receive);
 
     tokio::select! {
         _ = send_fut => {}

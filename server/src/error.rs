@@ -12,6 +12,8 @@ pub enum ServerError {
     Json(#[from] serde_json::Error),
     #[error("Parse int error: {0}")]
     ParseInt(#[from] std::num::ParseIntError),
+    #[error("Parse float error: {0}")]
+    ParseFloat(#[from] std::num::ParseFloatError),
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] oauth2::reqwest::Error),
     #[error("OAuth2 token request error: {0}")]

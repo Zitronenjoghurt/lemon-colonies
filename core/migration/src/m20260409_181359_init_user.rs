@@ -15,6 +15,7 @@ impl MigrationTrait for Migration {
                     .col(string_null(User::DiscordId).unique_key())
                     .col(string(User::Username).unique_key())
                     .col(big_integer(User::Permissions).default(Expr::val(0)))
+                    .col(small_integer(User::RateLimitInfractions).default(Expr::val(0)))
                     .col(timestamp(User::CreatedAt).default(Expr::current_timestamp()))
                     .col(timestamp(User::UpdatedAt).default(Expr::current_timestamp()))
                     .to_owned(),
@@ -66,6 +67,7 @@ enum User {
     DiscordId,
     Username,
     Permissions,
+    RateLimitInfractions,
     CreatedAt,
     UpdatedAt,
 }

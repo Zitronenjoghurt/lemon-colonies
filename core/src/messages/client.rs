@@ -24,4 +24,15 @@ impl ClientMessage {
     pub fn from_bytes(bytes: &[u8]) -> CoreResult<Self> {
         Ok(bitcode::decode(bytes)?)
     }
+
+    pub fn cost(&self) -> f64 {
+        match self {
+            Self::Ping { .. } => 1.0,
+            Self::ColonyPositions => 3.0,
+            Self::ObjectPlacement(_) => 6.0,
+            Self::SubscribeToChunks(_) => 12.0,
+            Self::OwnedChunks => 3.0,
+            Self::UserInfo => 3.0,
+        }
+    }
 }
