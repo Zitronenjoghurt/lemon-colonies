@@ -9,7 +9,7 @@ use egui_macroquad::macroquad::color::Color;
 use egui_macroquad::macroquad::input::{is_mouse_button_pressed, MouseButton};
 use egui_macroquad::macroquad::logging::debug;
 use egui_macroquad::macroquad::prelude::Rect as GlamRect;
-use lemon_colonies_core::game::object::ObjectData;
+use lemon_colonies_core::game::object::data::ObjectData;
 use lemon_colonies_core::math::coords::{ChunkCoords, ChunkLocal, WorldCoords};
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 

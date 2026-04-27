@@ -3,7 +3,8 @@ use egui_macroquad::macroquad::prelude::{
     draw_rectangle, draw_rectangle_lines, draw_texture_ex, vec2, Color, DrawTextureParams, Rect,
     Vec2, WHITE,
 };
-use lemon_colonies_core::game::object::ObjectData;
+use lemon_colonies_core::game::object::data::bush::BushKind;
+use lemon_colonies_core::game::object::data::ObjectData;
 use lemon_colonies_core::game::terrain::Terrain;
 use lemon_colonies_core::math::coords::WorldCoords;
 
@@ -147,7 +148,23 @@ impl HasSprite for Terrain {
 impl HasSprite for ObjectData {
     fn sprite(&self) -> Sprite {
         match self {
-            Self::Bush => Sprite::from_object(Atlas::BaseOverworld, 3.0, 654.0, self),
+            Self::Bush(bush) => {
+                if bush.berries == 0 {
+                    Sprite::from_object(Atlas::BaseOverworld, 3.0, 654.0, self)
+                } else {
+                    match bush.kind {
+                        BushKind::Blueberry => {
+                            Sprite::from_object(Atlas::BaseOverworld, 51.0, 654.0, self)
+                        }
+                        BushKind::Raspberry => {
+                            Sprite::from_object(Atlas::BaseOverworld, 99.0, 654.0, self)
+                        }
+                        BushKind::Golberry => {
+                            Sprite::from_object(Atlas::BaseOverworld, 147.0, 654.0, self)
+                        }
+                    }
+                }
+            }
         }
     }
 }

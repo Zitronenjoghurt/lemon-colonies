@@ -64,7 +64,8 @@ impl App {
     }
 
     pub fn render_game(&mut self) {
-        self.game.update(&mut self.ws, self.ui.wants_pointer);
+        self.game
+            .update(&mut self.ws, &self.server_time, self.ui.wants_pointer);
         clear_background(BLACK);
         self.game.draw(&self.settings);
     }

@@ -1,10 +1,11 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::chunk::ChunkObject;
-use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords, WorldCoords};
-use crate::math::point::Point;
-use crate::math::rect::Rect;
-use strum_macros::{EnumCount, EnumIter, FromRepr};
+use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords};
+use data::ObjectData;
 use uuid::Uuid;
+
+pub mod data;
+pub mod kind;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
@@ -23,93 +24,27 @@ impl From<ObjectId> for Uuid {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl ObjectId {
+    pub fn seed(&self) -> u64 {
+        u64::from_le_bytes(self.0[..8].try_into().unwrap())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Object {
     pub id: ObjectId,
     pub pos: ChunkLocal,
     pub data: ObjectData,
+    pub last_update: f64,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, EnumCount)]
-#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum ObjectData {
-    Bush,
-}
-
-impl ObjectData {
-    /// The width of this object in pixels
-    pub const fn width(&self) -> f32 {
-        match self {
-            Self::Bush => 10.0,
-        }
-    }
-
-    /// The height of this object in pixels
-    pub const fn height(&self) -> f32 {
-        match self {
-            Self::Bush => 10.0,
-        }
-    }
-
-    pub const fn collision_height(&self) -> f32 {
-        match self {
-            Self::Bush => 8.0,
-        }
-    }
-
-    pub const fn collision_width(&self) -> f32 {
-        match self {
-            Self::Bush => 8.0,
-        }
-    }
-
-    pub const fn collision_rect(&self, pos: WorldCoords) -> Rect<f32> {
-        let hw = self.collision_width() / 2.0;
-        let h = self.collision_height();
-        Rect::new(
-            Point::new(pos.x - hw, pos.y - h),
-            Point::new(pos.x + hw, pos.y),
-        )
-    }
-
-    pub const fn pivot(&self) -> (f32, f32) {
-        (self.width() / 2.0, self.height())
-    }
-
-    pub const fn center(&self) -> (f32, f32) {
-        (self.width() / 2.0, self.height() / 2.0)
-    }
-
-    pub const fn pivot_center_offset(&self) -> (f32, f32) {
-        (
-            self.pivot().0 - self.center().0,
-            self.pivot().1 - self.center().1,
-        )
-    }
-
-    pub const fn kind(&self) -> ObjectKind {
-        match self {
-            Self::Bush => ObjectKind::Bush,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
-#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[repr(u16)]
-pub enum ObjectKind {
-    Bush,
-}
-
-impl ObjectKind {
-    pub const fn default_data(&self) -> ObjectData {
-        match self {
-            Self::Bush => ObjectData::Bush,
-        }
+impl Object {
+    pub fn tick(&mut self, server_time: f64) {
+        let delta = server_time - self.last_update;
+        self.data.tick(self.id, delta);
+        self.last_update = server_time;
     }
 }
 
@@ -124,7 +59,8 @@ impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
             ObjectId::from(model.id),
             ChunkObject {
                 pos: LocalCoords::new(model.x as u8, model.y as u8),
-                data,
+                data: ObjectData::from(data),
+                last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
             },
         ))
     }
@@ -143,7 +79,8 @@ impl TryFrom<crate::data::entity::object::Model> for Object {
                 ChunkCoords::new(model.chunk_x, model.chunk_y),
                 LocalCoords::new(model.x as u8, model.y as u8),
             ),
-            data,
+            data: ObjectData::from(data),
+            last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
         })
     }
 }

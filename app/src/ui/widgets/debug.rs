@@ -4,7 +4,8 @@ use crate::game::Game;
 use crate::server_time::{DateTime, ServerTime};
 use crate::settings::Settings;
 use egui_macroquad::egui::{Grid, Response, Ui, Widget};
-use lemon_colonies_core::game::object::ObjectData;
+use lemon_colonies_core::game::object::data::bush::BushObject;
+use lemon_colonies_core::game::object::data::ObjectData;
 
 pub struct DebugWidget<'a> {
     pub fps_counter: FpsCounter,
@@ -109,7 +110,9 @@ impl Widget for DebugWidget<'_> {
 
                     ui.label("Bush");
                     if ui.button("Place").clicked() {
-                        self.game.object_action.start_place(ObjectData::Bush);
+                        self.game
+                            .object_action
+                            .start_place(ObjectData::Bush(BushObject::default()));
                     }
                     ui.end_row();
                 });

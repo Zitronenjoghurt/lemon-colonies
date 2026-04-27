@@ -1,5 +1,6 @@
 use crate::error::{CoreError, CoreResult};
-use crate::game::object::{Object, ObjectData, ObjectId};
+use crate::game::object::data::ObjectData;
+use crate::game::object::{Object, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
 use crate::math::coords::{ChunkCoords, LocalCoords};
 use crate::math::rect::Rect;
@@ -45,12 +46,14 @@ impl Chunk {
         if let Some(obj) = self.objects.get_mut(&object.id) {
             obj.pos = object.pos.local;
             obj.data = object.data;
+            obj.last_update = object.last_update;
         } else {
             self.objects.insert(
                 object.id,
                 ChunkObject {
                     pos: object.pos.local,
                     data: object.data,
+                    last_update: object.last_update,
                 },
             );
         }
@@ -66,6 +69,12 @@ impl Chunk {
         }
         false
     }
+
+    pub fn tick(&mut self, server_time: f64) {
+        for (id, obj) in self.objects.iter_mut() {
+            obj.tick(*id, server_time);
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -73,6 +82,15 @@ impl Chunk {
 pub struct ChunkObject {
     pub pos: LocalCoords,
     pub data: ObjectData,
+    pub last_update: f64,
+}
+
+impl ChunkObject {
+    pub fn tick(&mut self, id: ObjectId, server_time: f64) {
+        let delta = server_time - self.last_update;
+        self.data.tick(id, delta);
+        self.last_update = server_time;
+    }
 }
 
 #[cfg(feature = "data")]

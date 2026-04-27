@@ -3,10 +3,11 @@ use crate::game::camera::ClientCamera;
 use crate::game::data::ClientData;
 use crate::game::object_action::ObjectAction;
 use crate::game::world::{ClientWorld, WorldDrawSettings};
+use crate::server_time::ServerTime;
 use crate::settings::Settings;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::logging::debug;
-use egui_macroquad::macroquad::prelude::{get_time, MouseButton};
+use egui_macroquad::macroquad::prelude::get_time;
 use lemon_colonies_core::game::chunk::Chunk;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
@@ -46,8 +47,9 @@ impl Game {
         })
     }
 
-    pub fn update(&mut self, ws: &mut Ws, pointer_consumed: bool) {
+    pub fn update(&mut self, ws: &mut Ws, time: &ServerTime, pointer_consumed: bool) {
         self.camera.update();
+        self.world.tick(time);
 
         if ws.is_connected() {
             self.data.update(ws);

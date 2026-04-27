@@ -72,4 +72,8 @@ impl ClientChunk {
     pub fn update_object(&mut self, object: Object) {
         self.chunk.update_object(object);
     }
+
+    pub fn tick(&mut self, server_time: f64) {
+        self.chunk.tick(server_time);
+    }
 }

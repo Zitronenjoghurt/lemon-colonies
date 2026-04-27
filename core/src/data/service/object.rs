@@ -2,7 +2,7 @@ use crate::data::entity::object;
 use crate::data::store::Store;
 use crate::data::Data;
 use crate::error::{CoreError, CoreResult};
-use crate::game::object::ObjectData;
+use crate::game::object::data::ObjectData;
 use crate::math::coords::{ChunkCoords, LocalCoords};
 use crate::math::rect::Rect;
 use futures::TryStreamExt;

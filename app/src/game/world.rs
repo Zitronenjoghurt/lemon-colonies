@@ -3,6 +3,7 @@ use crate::game::camera::ClientCamera;
 use crate::game::chunk::ClientChunk;
 use crate::game::data::ClientData;
 use crate::game::sprite::{HasSprite, SpriteDraw};
+use crate::server_time::ServerTime;
 use egui_macroquad::macroquad::prelude::{
     draw_line, draw_rectangle_lines, set_default_camera, Color, Rect as GlamRect,
 };
@@ -17,6 +18,8 @@ const CHUNK_BORDER_THICKNESS: f32 = 1.0;
 const TERRITORY_OUTLINE_THICKNESS: f32 = 2.0;
 const TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 6.0, 0.0, 0.8);
 
+const SECONDS_PER_TICK: f64 = 1.0;
+
 pub struct WorldDrawSettings {
     pub chunk_borders: bool,
     pub object_collisions: bool,
@@ -26,6 +29,7 @@ pub struct WorldDrawSettings {
 pub struct ClientWorld {
     chunks: HashMap<ChunkCoords, ClientChunk>,
     object_count: usize,
+    last_tick: f64,
 }
 
 impl ClientWorld {
@@ -230,5 +234,21 @@ impl ClientWorld {
         }
 
         false
+    }
+}
+
+// Ticking
+impl ClientWorld {
+    pub fn tick(&mut self, server_time: &ServerTime) {
+        let now = server_time.now();
+        if now - self.last_tick < SECONDS_PER_TICK {
+            return;
+        }
+
+        for chunk in self.chunks.values_mut() {
+            chunk.tick(now);
+        }
+
+        self.last_tick = now;
     }
 }

@@ -1,4 +1,5 @@
 use crate::math::coords::ChunkCoords;
+use crate::GOLDEN_RATIO_CONSTANT;
 use fastrand::Rng;
 
 const SPACING_FACTOR: f64 = 16.0;
@@ -18,7 +19,7 @@ pub fn determine_new_colony_position(total_colony_count: u64, world_seed: u64) -
     let base_x = radius * theta.cos();
     let base_y = radius * theta.sin();
 
-    let combined_seed = world_seed ^ total_colony_count.wrapping_mul(0x9E3779B97F4A7C15);
+    let combined_seed = world_seed ^ total_colony_count.wrapping_mul(GOLDEN_RATIO_CONSTANT);
     let mut rng = Rng::with_seed(combined_seed);
 
     let rand_x = ((rng.f64() * 2.0) - 1.0) * JITTER_STRENGTH;

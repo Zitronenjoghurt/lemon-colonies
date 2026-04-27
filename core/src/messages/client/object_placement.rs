@@ -1,5 +1,5 @@
 use crate::error::{CoreError, CoreResult};
-use crate::game::object::ObjectData;
+use crate::game::object::data::ObjectData;
 use crate::math::coords::{ChunkLocal, WorldCoords};
 use crate::math::rect::Rect;
 
