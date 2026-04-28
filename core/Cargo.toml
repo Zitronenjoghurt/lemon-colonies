@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-data = ["async-trait", "futures", "migration", "sea-orm"]
+data = ["async-trait", "futures", "migration", "sea-orm", "serde"]
 serde = ["dep:serde", "dep:serde_json"]
 
 [dependencies]

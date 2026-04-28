@@ -14,18 +14,16 @@ use lemon_colonies_core::math::coords::{ChunkCoords, ChunkLocal, WorldCoords};
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 
 #[derive(Default)]
-pub struct ObjectAction {
+pub struct ObjectPlace {
     target_data: Option<ObjectData>,
-    mode: Option<ObjectActionMode>,
     collision_detected: bool,
     last_collision: Option<ChunkLocal>,
     continuous: bool,
 }
 
-impl ObjectAction {
-    pub fn start_place(&mut self, data: ObjectData) {
+impl ObjectPlace {
+    pub fn start(&mut self, data: ObjectData) {
         self.target_data = Some(data);
-        self.mode = Some(ObjectActionMode::Place);
         self.continuous = true;
     }
 
@@ -42,26 +40,17 @@ impl ObjectAction {
 
         if is_mouse_button_pressed(MouseButton::Right) {
             self.target_data = None;
-            self.mode = None;
             self.continuous = false;
             return;
         }
 
         let mouse_world = camera.screen_to_world(mouse_screen_coords());
         self.update_collision(world, data, mouse_world);
-        if let Some(mode) = &self.mode {
-            match mode {
-                ObjectActionMode::Place => self.handle_object_placement_input(ws, mouse_world),
-            }
-        }
+        self.handle_input(ws, mouse_world);
     }
 
     pub fn draw(&self, atlas: &AtlasStore, camera: &ClientCamera) {
-        if let Some(mode) = &self.mode {
-            match mode {
-                ObjectActionMode::Place => self.draw_object_to_place(atlas, camera),
-            }
-        }
+        self.draw_object_to_place(atlas, camera)
     }
 
     fn update_collision(
@@ -102,13 +91,13 @@ impl ObjectAction {
     }
 
     pub fn wants_to_place(&self) -> bool {
-        self.mode == Some(ObjectActionMode::Place)
+        self.target_data.is_some()
     }
 }
 
 // Input
-impl ObjectAction {
-    pub fn handle_object_placement_input(&mut self, ws: &mut Ws, mouse_world: WorldCoords) {
+impl ObjectPlace {
+    pub fn handle_input(&mut self, ws: &mut Ws, mouse_world: WorldCoords) {
         if self.collision_detected {
             return;
         }
@@ -137,13 +126,12 @@ impl ObjectAction {
 
         if !self.continuous {
             self.target_data = None;
-            self.mode = None;
         }
     }
 }
 
 // Rendering
-impl ObjectAction {
+impl ObjectPlace {
     pub fn draw_object_to_place(&self, atlas: &AtlasStore, camera: &ClientCamera) {
         let Some(object) = &self.target_data else {
             return;

@@ -4,6 +4,7 @@ use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords};
 use data::ObjectData;
 use uuid::Uuid;
 
+pub mod command;
 pub mod data;
 pub mod kind;
 
@@ -46,6 +47,13 @@ impl Object {
         self.data.tick(self.id, delta);
         self.last_update = server_time;
     }
+
+    pub fn apply_command(
+        &mut self,
+        command: command::ObjectCommand,
+    ) -> command::ObjectCommandResult {
+        self.data.apply_command(command.kind)
+    }
 }
 
 #[cfg(feature = "data")]
@@ -59,7 +67,7 @@ impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
             ObjectId::from(model.id),
             ChunkObject {
                 pos: LocalCoords::new(model.x as u8, model.y as u8),
-                data: ObjectData::from(data),
+                data,
                 last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
             },
         ))
@@ -79,7 +87,7 @@ impl TryFrom<crate::data::entity::object::Model> for Object {
                 ChunkCoords::new(model.chunk_x, model.chunk_y),
                 LocalCoords::new(model.x as u8, model.y as u8),
             ),
-            data: ObjectData::from(data),
+            data,
             last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
         })
     }

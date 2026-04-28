@@ -1,4 +1,5 @@
 use crate::error::{CoreError, CoreResult};
+use crate::game::object::command::{ObjectCommandKind, ObjectCommandResult};
 use crate::game::object::data::ObjectData;
 use crate::game::object::{Object, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
@@ -59,7 +60,7 @@ impl Chunk {
         }
     }
 
-    pub fn rect_collides_with_object(&self, rect: Rect<f32>) -> bool {
+    pub fn rect_collides_with_object_collision(&self, rect: Rect<f32>) -> bool {
         for obj in self.objects.values() {
             let pos = obj.pos.with_chunk(self.pos).world();
             let collision = obj.data.collision_rect(pos);
@@ -90,6 +91,10 @@ impl ChunkObject {
         let delta = server_time - self.last_update;
         self.data.tick(id, delta);
         self.last_update = server_time;
+    }
+
+    pub fn apply_command(&mut self, command_kind: ObjectCommandKind) -> ObjectCommandResult {
+        self.data.apply_command(command_kind)
     }
 }
 

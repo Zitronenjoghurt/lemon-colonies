@@ -58,6 +58,7 @@ pub struct SpriteDraw {
     pub anchor: WorldCoords,
     pub sort_y: f32,
     pub tint: Color,
+    pub bounds: Option<Rect>,
     pub collision: Option<Rect>,
 }
 
@@ -69,12 +70,18 @@ impl SpriteDraw {
             anchor,
             sort_y,
             tint: WHITE,
+            bounds: None,
             collision: None,
         }
     }
 
     pub fn with_tint(mut self, tint: Color) -> Self {
         self.tint = tint;
+        self
+    }
+
+    pub fn with_bounds(mut self, bounds: Rect) -> Self {
+        self.bounds = Some(bounds);
         self
     }
 
@@ -96,6 +103,13 @@ impl SpriteDraw {
                 ..Default::default()
             },
         );
+    }
+
+    pub fn draw_bounds(&self) {
+        if let Some(br) = self.bounds {
+            draw_rectangle(br.x, br.y, br.w, br.h, Color::new(0.0, 0.0, 1.0, 0.15));
+            draw_rectangle_lines(br.x, br.y, br.w, br.h, 0.5, Color::new(0.0, 0.0, 1.0, 0.6));
+        }
     }
 
     pub fn draw_collision(&self) {

@@ -1,6 +1,8 @@
+use crate::i18n::Translatable;
 use crate::settings::Settings;
 use crate::ui::widgets::reset_slider::ResetSlider;
 use egui_macroquad::egui::{Grid, Response, ScrollArea, Ui, Widget};
+use lemon_colonies_core::lingo::Lingo::*;
 
 pub struct SettingsWidget<'a> {
     pub settings: &'a mut Settings,
@@ -16,7 +18,7 @@ impl<'a> SettingsWidget<'a> {
     }
 
     fn ui_scale(&mut self, ui: &mut Ui) {
-        ui.label("UI Scale");
+        ui.label(UiScale.t());
         let response = ResetSlider::new(&mut self.settings.ui_scale, 0.5..=4.0)
             .step_by(0.1)
             .default_value(Settings::DEFAULT_UI_SCALE)

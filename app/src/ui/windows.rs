@@ -1,3 +1,4 @@
+use crate::i18n::Translatable;
 use crate::ui::{icon, UiViewer};
 use egui_macroquad::egui;
 use egui_macroquad::egui::Id;
@@ -17,7 +18,7 @@ pub enum WindowId {
 impl WindowId {
     pub fn show(&self, viewer: &mut UiViewer, ctx: &egui::Context) {
         let mut open = true;
-        egui::Window::new(self.title())
+        egui::Window::new(self.t())
             .id(Id::new(self))
             .open(&mut open)
             .collapsible(self.collapsible())
@@ -27,13 +28,6 @@ impl WindowId {
             });
         if !open {
             viewer.state.toggle_window(*self);
-        }
-    }
-
-    pub fn title(&self) -> &'static str {
-        match self {
-            WindowId::Debug => "Debug",
-            WindowId::Settings => "Settings",
         }
     }
 

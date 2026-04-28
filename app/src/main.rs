@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate rust_i18n;
+i18n!("locales");
+
 use crate::app::App;
 use egui_macroquad::macroquad;
 use egui_macroquad::macroquad::prelude::*;
@@ -7,6 +11,7 @@ mod bindings;
 mod fps_counter;
 mod game;
 mod http;
+mod i18n;
 mod server_time;
 mod settings;
 mod storage;

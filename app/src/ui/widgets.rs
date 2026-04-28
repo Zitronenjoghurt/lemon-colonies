@@ -1,5 +1,8 @@
 pub mod connection_status;
 pub mod debug;
+pub mod generic_select;
+pub mod hover_info;
+mod object_data;
 pub mod profile_menu;
 pub mod reset_slider;
 pub mod settings;

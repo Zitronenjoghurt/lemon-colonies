@@ -1,14 +1,16 @@
 use crate::game::atlas::AtlasStore;
 use crate::game::camera::ClientCamera;
 use crate::game::data::ClientData;
-use crate::game::object_action::ObjectAction;
+use crate::game::object_hover::ObjectHover;
+use crate::game::object_place::ObjectPlace;
 use crate::game::world::{ClientWorld, WorldDrawSettings};
 use crate::server_time::ServerTime;
 use crate::settings::Settings;
 use crate::ws::Ws;
 use egui_macroquad::macroquad::logging::debug;
 use egui_macroquad::macroquad::prelude::get_time;
-use lemon_colonies_core::game::chunk::Chunk;
+use lemon_colonies_core::game::chunk::{Chunk, ChunkObject};
+use lemon_colonies_core::game::object::ObjectId;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdateKind, ChunkUpdateMessage};
@@ -18,7 +20,8 @@ pub mod atlas;
 pub mod camera;
 mod chunk;
 pub mod data;
-mod object_action;
+mod object_hover;
+mod object_place;
 pub mod sprite;
 mod world;
 
@@ -29,7 +32,8 @@ pub struct Game {
     pub camera: ClientCamera,
     pub data: ClientData,
     pub world: ClientWorld,
-    pub object_action: ObjectAction,
+    pub object_place: ObjectPlace,
+    pub object_hover: ObjectHover,
     last_subscribed_rect: Option<Rect<i32>>,
     rect_dirty_since: Option<f64>,
 }
@@ -41,7 +45,8 @@ impl Game {
             camera: Default::default(),
             data: Default::default(),
             world: Default::default(),
-            object_action: Default::default(),
+            object_place: Default::default(),
+            object_hover: Default::default(),
             last_subscribed_rect: None,
             rect_dirty_since: None,
         })
@@ -56,22 +61,29 @@ impl Game {
             self.update_chunk_subscription(ws);
 
             if !pointer_consumed {
-                self.object_action
+                self.object_place
                     .update(ws, &self.camera, &self.world, &self.data);
             }
+        }
+
+        if !self.object_place.wants_to_place() && !pointer_consumed {
+            self.object_hover.update(&self.camera, &self.world);
+        } else {
+            self.object_hover.reset();
         }
     }
 
     pub fn draw(&mut self, settings: &Settings) {
         let world_draw = WorldDrawSettings {
             chunk_borders: settings.display_chunk_borders,
+            object_bounds: settings.display_object_bounds,
             object_collisions: settings.display_object_collisions
-                || self.object_action.wants_to_place(),
+                || self.object_place.wants_to_place(),
         };
         self.world
             .draw(&self.atlas, &self.camera, &world_draw, &self.data);
 
-        self.object_action.draw(&self.atlas, &self.camera);
+        self.object_place.draw(&self.atlas, &self.camera);
     }
 }
 
@@ -96,6 +108,19 @@ impl Game {
         self.rect_dirty_since = None;
         ws.subscribe_chunks(rect);
         self.world.unload_distant_chunks(rect);
+    }
+}
+
+// Helpers
+impl Game {
+    pub fn get_hovered_object(&self) -> Option<(ObjectId, ChunkCoords, &ChunkObject)> {
+        if let Some((id, coords)) = self.object_hover.get() {
+            let chunk = self.world.get_chunk(coords.chunk)?;
+            let object = chunk.objects.get(&id)?;
+            Some((id, coords.chunk, object))
+        } else {
+            None
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::i18n::Translatable;
 use crate::ui::state::UiState;
 use crate::ui::windows::WindowId;
 use egui_macroquad::egui::{Response, Ui, Widget};
@@ -18,7 +19,7 @@ impl Widget for WindowButton<'_> {
         let is_open = self.state.is_window_open(self.window_id);
         let response = ui
             .selectable_label(is_open, self.window_id.icon())
-            .on_hover_text(self.window_id.title());
+            .on_hover_text(self.window_id.t());
         if response.clicked() {
             self.state.toggle_window(self.window_id);
         }

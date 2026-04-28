@@ -1,10 +1,13 @@
+use crate::i18n::Locale;
 use crate::storage::Storage;
 use egui_macroquad::egui;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Settings {
+    pub locale: Locale,
     pub ui_scale: f32,
     pub display_chunk_borders: bool,
+    pub display_object_bounds: bool,
     pub display_object_collisions: bool,
     #[serde(skip, default = "default_true")]
     pub dirty: bool,
@@ -13,8 +16,10 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            locale: Locale::default(),
             ui_scale: Self::DEFAULT_UI_SCALE,
             display_chunk_borders: false,
+            display_object_bounds: false,
             display_object_collisions: false,
             dirty: true,
         }
@@ -47,6 +52,7 @@ impl Settings {
             return;
         }
 
+        self.locale.apply();
         ctx.set_pixels_per_point(self.ui_scale);
 
         self.dirty = false;

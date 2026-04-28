@@ -1,7 +1,9 @@
 use crate::game::data::ClientData;
 use crate::http::Http;
+use crate::i18n::Translatable;
 use crate::ui::icon;
 use egui_macroquad::egui::{Response, Ui, Widget};
+use lemon_colonies_core::lingo::Lingo::Logout;
 
 pub struct ProfileMenu<'a> {
     data: &'a ClientData,
@@ -20,7 +22,10 @@ impl Widget for ProfileMenu<'_> {
             Some(info) => {
                 let label = format!("{} {}", icon::USER, info.public.username);
                 ui.menu_button(label, |ui| {
-                    if ui.button(format!("{} Logout", icon::SIGN_OUT)).clicked() {
+                    if ui
+                        .button(format!("{} {}", icon::SIGN_OUT, Logout.t()))
+                        .clicked()
+                    {
                         self.http.do_logout();
                         ui.close_menu();
                     }

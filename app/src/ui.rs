@@ -1,14 +1,16 @@
 use crate::fps_counter::FpsCounter;
+use crate::ui::widgets::generic_select::GenericSelect;
+use crate::ui::widgets::hover_info::HoverInfo;
 use crate::ui::widgets::profile_menu::ProfileMenu;
 use crate::ui::widgets::window_button::WindowButton;
 use crate::ui::windows::WindowId;
 use egui_macroquad::egui;
-use egui_macroquad::egui::{TopBottomPanel, Widget};
+use egui_macroquad::egui::{Id, TopBottomPanel, Widget};
 pub use egui_phosphor::regular as icon;
 
 pub mod state;
 mod widgets;
-mod windows;
+pub mod windows;
 
 pub struct UiViewer<'a> {
     pub settings: &'a mut crate::settings::Settings,
@@ -30,6 +32,7 @@ impl<'a> UiViewer<'a> {
         });
 
         self.show_windows(ctx);
+        self.show_inspector(ctx);
     }
 
     fn show_windows(&mut self, ctx: &egui::Context) {
@@ -37,6 +40,30 @@ impl<'a> UiViewer<'a> {
         for window_id in window_ids {
             window_id.show(self, ctx);
         }
+    }
+
+    fn show_inspector(&mut self, ctx: &egui::Context) {
+        let Some((id, chunk, object)) = self.game.get_hovered_object() else {
+            return;
+        };
+
+        let screen = ctx.screen_rect();
+        let panel_width = screen.width() * 0.25;
+        let panel_height = screen.height() * 0.15;
+        let margin = screen.width() * 0.01;
+
+        egui::Area::new(Id::new("inspector_panel"))
+            .anchor(egui::Align2::LEFT_BOTTOM, [margin, -margin])
+            .interactable(false)
+            .show(ctx, |ui| {
+                egui::Frame::popup(ui.style())
+                    .fill(ui.style().visuals.window_fill().gamma_multiply(0.9))
+                    .show(ui, |ui| {
+                        ui.set_width(panel_width);
+                        ui.set_height(panel_height);
+                        HoverInfo::new(id, chunk, object).ui(ui);
+                    });
+            });
     }
 
     fn top_panel(&mut self, ui: &mut egui::Ui) {
@@ -48,6 +75,10 @@ impl<'a> UiViewer<'a> {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ProfileMenu::new(&self.game.data, self.http).ui(ui);
+                self.settings.dirty |=
+                    GenericSelect::from_enum(&mut self.settings.locale, "locale_select")
+                        .ui(ui)
+                        .changed();
             });
         });
     }

@@ -22,6 +22,7 @@ const SECONDS_PER_TICK: f64 = 1.0;
 
 pub struct WorldDrawSettings {
     pub chunk_borders: bool,
+    pub object_bounds: bool,
     pub object_collisions: bool,
 }
 
@@ -73,6 +74,15 @@ impl ClientWorld {
                     obj.data.sprite(),
                     obj.pos.with_chunk(chunk.chunk.pos).world(),
                 );
+                if settings.object_bounds {
+                    let rect = obj.data.bounding_rect(draw.anchor);
+                    draw = draw.with_bounds(GlamRect::new(
+                        rect.min.x,
+                        rect.min.y,
+                        rect.width(),
+                        rect.height(),
+                    ))
+                }
                 if settings.object_collisions {
                     let rect = obj.data.collision_rect(draw.anchor);
                     draw = draw.with_collision(GlamRect::new(
@@ -95,6 +105,12 @@ impl ClientWorld {
 
         for sprite_draw in &draws {
             sprite_draw.draw(store);
+        }
+
+        if settings.object_bounds {
+            for sprite_draw in &draws {
+                sprite_draw.draw_bounds();
+            }
         }
 
         if settings.object_collisions {
@@ -227,7 +243,7 @@ impl ClientWorld {
                 let Some(chunk) = self.get_chunk(ChunkCoords::new(cx, cy)) else {
                     continue;
                 };
-                if chunk.rect_collides_with_object(rect) {
+                if chunk.rect_collides_with_object_collision(rect) {
                     return true;
                 }
             }

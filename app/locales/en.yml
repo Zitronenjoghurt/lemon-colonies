@@ -1,0 +1,25 @@
+common:
+  berries: Berries
+  berry_growth: Berry growth
+  chunk_borders: Chunk borders
+  display_x: 'Display %{x}'
+  kind: Kind
+  latency: Latency
+  loaded_chunks: Loaded chunks
+  loaded_objects: Loaded objects
+  logout: Logout
+  mouse_position: Mouse position
+  object_bounds: Object bounds
+  object_collisions: Object collisions
+  place_verb: Place
+  position: Position
+  server_time: Server time
+  ui_scale: UI scale
+object:
+  bush: Bush
+  bush.blueberry: Blueberry Bush
+  bush.raspberry: Raspberry Bush
+  bush.golberry: Golberry Bush
+window:
+  debug: Debug
+  settings: Settings

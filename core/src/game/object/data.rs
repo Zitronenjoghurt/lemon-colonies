@@ -1,3 +1,4 @@
+use crate::game::object::command::{ObjectCommandKind, ObjectCommandResult};
 use crate::game::object::kind::ObjectKind;
 use crate::game::object::ObjectId;
 use crate::math::coords::WorldCoords;
@@ -26,6 +27,15 @@ impl ObjectData {
         match self {
             Self::Bush(_) => 10.0,
         }
+    }
+
+    pub const fn bounding_rect(&self, pos: WorldCoords) -> Rect<f32> {
+        let hw = self.width() / 2.0;
+        let h = self.height();
+        Rect::new(
+            Point::new(pos.x - hw, pos.y - h),
+            Point::new(pos.x + hw, pos.y),
+        )
     }
 
     pub const fn collision_height(&self) -> f32 {
@@ -73,6 +83,12 @@ impl ObjectData {
     pub fn tick(&mut self, id: ObjectId, delta: f64) {
         match self {
             Self::Bush(bush) => bush.tick(id, delta),
+        }
+    }
+
+    pub fn apply_command(&mut self, command_kind: ObjectCommandKind) -> ObjectCommandResult {
+        match self {
+            Self::Bush(bush) => bush.apply_command(command_kind),
         }
     }
 }

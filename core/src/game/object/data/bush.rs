@@ -1,5 +1,7 @@
+use crate::game::object::command::{ObjectCommandKind, ObjectCommandResult};
 use crate::game::object::ObjectId;
-use crate::GOLDEN_RATIO_CONSTANT;
+use crate::game::resource::ResourceId;
+use crate::GRC_64;
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 
 const GROWTH_RATE_FLUCTUATION: f64 = 0.2;
@@ -36,10 +38,11 @@ impl BushObject {
         let new_berries = (self.growth.floor() as u8).min(self.max_berries() - self.berries);
         self.berries = self.berries.saturating_add(new_berries);
         self.growth -= new_berries as f64;
+        self.growth = self.growth.clamp(0.0, 1.0);
     }
 
     pub fn growth_rate(&self, id: ObjectId) -> f64 {
-        let seed = id.seed() ^ (self.harvest_count as u64).wrapping_mul(GOLDEN_RATIO_CONSTANT);
+        let seed = id.seed() ^ (self.harvest_count as u64).wrapping_mul(GRC_64);
         let jitter = fastrand::Rng::with_seed(seed).f64();
         self.kind.base_growth_rate()
             * (1.0 - GROWTH_RATE_FLUCTUATION + GROWTH_RATE_FLUCTUATION * 2.0 * jitter)
@@ -47,6 +50,21 @@ impl BushObject {
 
     pub fn max_berries(&self) -> u8 {
         self.kind.max_berries()
+    }
+
+    pub fn apply_command(&mut self, command_kind: ObjectCommandKind) -> ObjectCommandResult {
+        match command_kind {
+            ObjectCommandKind::Interact => {
+                if self.berries > 0 {
+                    let berries = self.berries as u64;
+                    self.berries = 0;
+                    self.harvest_count += 1;
+                    ObjectCommandResult::receive_resources(self.kind.resource_id(), berries)
+                } else {
+                    ObjectCommandResult::None
+                }
+            }
+        }
     }
 }
 
@@ -75,6 +93,14 @@ impl BushKind {
             Self::Blueberry => 20,
             Self::Raspberry => 10,
             Self::Golberry => 5,
+        }
+    }
+
+    pub fn resource_id(&self) -> ResourceId {
+        match self {
+            Self::Blueberry => ResourceId::Blueberry,
+            Self::Raspberry => ResourceId::Raspberry,
+            Self::Golberry => ResourceId::Golberry,
         }
     }
 }

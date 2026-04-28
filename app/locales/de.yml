@@ -1,0 +1,25 @@
+common:
+  berries: Beeren
+  berry_growth: Beerenwachstum
+  chunk_borders: Chunkgrenzen
+  display_x: '%{x} anzeigen'
+  kind: Art
+  latency: Latenz
+  loaded_chunks: Geladene Chunks
+  loaded_objects: Geladene Objekte
+  logout: Abmelden
+  mouse_position: Mausposition
+  object_bounds: Objektbegrenzungen
+  object_collisions: Objektkollisionen
+  place_verb: Platzieren
+  position: Position
+  server_time: Serverzeit
+  ui_scale: UI Skalierung
+object:
+  bush: Busch
+  bush.blueberry: Blaubeerbusch
+  bush.raspberry: Himbeerbusch
+  bush.golberry: Goldbeerenbusch
+window:
+  debug: Debug
+  settings: Einstellungen
