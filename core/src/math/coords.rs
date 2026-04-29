@@ -1,6 +1,7 @@
 use crate::game::chunk::CHUNK_EDGE_PIXELS;
 use crate::math::point::Point;
 use crate::math::rect::Rect;
+use std::fmt::Display;
 use std::ops::{Add, Sub};
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -67,6 +68,12 @@ impl Sub<WorldCoords> for WorldCoords {
     }
 }
 
+impl Display for WorldCoords {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -114,6 +121,12 @@ impl From<(i32, i32)> for ChunkCoords {
     }
 }
 
+impl Display for ChunkCoords {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -144,6 +157,12 @@ impl From<(u8, u8)> for LocalCoords {
     }
 }
 
+impl Display for LocalCoords {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -162,5 +181,11 @@ impl ChunkLocal {
             self.chunk.x as f32 * CHUNK_EDGE_PIXELS as f32 + self.local.x as f32,
             self.chunk.y as f32 * CHUNK_EDGE_PIXELS as f32 + self.local.y as f32,
         )
+    }
+}
+
+impl Display for ChunkLocal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}", self.chunk, self.local)
     }
 }

@@ -57,11 +57,11 @@ impl<'a> UiViewer<'a> {
             .interactable(false)
             .show(ctx, |ui| {
                 egui::Frame::popup(ui.style())
-                    .fill(ui.style().visuals.window_fill().gamma_multiply(0.9))
+                    .fill(ui.style().visuals.window_fill().gamma_multiply(0.95))
                     .show(ui, |ui| {
                         ui.set_width(panel_width);
                         ui.set_height(panel_height);
-                        HoverInfo::new(id, chunk, object).ui(ui);
+                        HoverInfo::new(id, chunk, object, self.server_time).ui(ui);
                     });
             });
     }

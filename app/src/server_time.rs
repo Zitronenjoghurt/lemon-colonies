@@ -104,8 +104,8 @@ impl ServerTime {
         get_time() + self.offset
     }
 
-    pub fn elapsed_since(&self, server_time: f64) -> f64 {
-        self.now() - server_time
+    pub fn elapsed_since(&self, server_time: f64) -> Duration {
+        Duration::from_secs_f64(self.now() - server_time)
     }
 
     pub fn latency(&self) -> f64 {
@@ -163,5 +163,105 @@ impl Display for DateTime {
             "{}-{:02}-{:02} {:02}:{:02}:{:02} UTC",
             self.year, self.month, self.day, self.hour, self.minute, self.second
         )
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub struct Duration {
+    secs: f64,
+}
+
+impl Duration {
+    pub const ZERO: Self = Self { secs: 0.0 };
+
+    pub const fn from_secs_f64(secs: f64) -> Self {
+        Self { secs }
+    }
+
+    pub const fn from_secs(secs: u64) -> Self {
+        Self { secs: secs as f64 }
+    }
+
+    pub fn from_millis(millis: u64) -> Self {
+        Self {
+            secs: millis as f64 / 1000.0,
+        }
+    }
+
+    pub const fn as_secs_f64(self) -> f64 {
+        self.secs
+    }
+
+    pub fn as_millis(self) -> u128 {
+        (self.secs * 1000.0) as u128
+    }
+
+    pub fn is_zero(self) -> bool {
+        self.secs == 0.0
+    }
+}
+
+impl std::ops::Add for Duration {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Self {
+            secs: self.secs + rhs.secs,
+        }
+    }
+}
+
+impl std::ops::Sub for Duration {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self {
+        Self {
+            secs: self.secs - rhs.secs,
+        }
+    }
+}
+
+impl std::ops::Mul<f64> for Duration {
+    type Output = Self;
+    fn mul(self, rhs: f64) -> Self {
+        Self {
+            secs: self.secs * rhs,
+        }
+    }
+}
+
+impl std::ops::Div<f64> for Duration {
+    type Output = Self;
+    fn div(self, rhs: f64) -> Self {
+        Self {
+            secs: self.secs / rhs,
+        }
+    }
+}
+
+impl Display for Duration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let total = self.secs.abs();
+
+        if total < 0.001 {
+            write!(f, "{:.0}µs", total * 1_000_000.0)
+        } else if total < 1.0 {
+            write!(f, "{:.0}ms", total * 1000.0)
+        } else if total < 60.0 {
+            write!(f, "{:.2}s", total)
+        } else if total < 3600.0 {
+            let m = (total / 60.0) as u64;
+            let s = (total % 60.0) as u64;
+            let ms = ((total % 1.0) * 1000.0) as u64;
+            write!(f, "{m}m {s}s {ms}ms")
+        } else if total < 86400.0 {
+            let h = (total / 3600.0) as u64;
+            let m = ((total % 3600.0) / 60.0) as u64;
+            let s = (total % 60.0) as u64;
+            write!(f, "{h}h {m}m {s}s")
+        } else {
+            let d = (total / 86400.0) as u64;
+            let h = ((total % 86400.0) / 3600.0) as u64;
+            let m = ((total % 3600.0) / 60.0) as u64;
+            write!(f, "{d}d {h}h {m}m")
+        }
     }
 }

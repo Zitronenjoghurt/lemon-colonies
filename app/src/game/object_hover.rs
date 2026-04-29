@@ -5,7 +5,7 @@ use lemon_colonies_core::math::coords::{ChunkCoords, ChunkLocal};
 use lemon_colonies_core::math::point::Point;
 use lemon_colonies_core::math::rect::Rect;
 
-const MOUSE_HOVER_CHUNK_RADIUS: f32 = 5.0;
+const MOUSE_HOVER_CHUNK_RADIUS: f32 = 10.0;
 
 #[derive(Default)]
 pub struct ObjectHover {

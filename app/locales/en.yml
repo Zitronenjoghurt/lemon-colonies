@@ -1,4 +1,5 @@
 common:
+  age: Age
   berries: Berries
   berry_growth: Berry growth
   chunk_borders: Chunk borders

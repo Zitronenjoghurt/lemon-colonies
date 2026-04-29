@@ -1,4 +1,5 @@
 common:
+  age: x
   berries: x
   berry_growth: x
   chunk_borders: x

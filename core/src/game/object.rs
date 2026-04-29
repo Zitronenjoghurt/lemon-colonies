@@ -39,6 +39,7 @@ pub struct Object {
     pub pos: ChunkLocal,
     pub data: ObjectData,
     pub last_update: f64,
+    pub created_at: f64,
 }
 
 impl Object {
@@ -69,6 +70,7 @@ impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
                 pos: LocalCoords::new(model.x as u8, model.y as u8),
                 data,
                 last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
+                created_at: model.created_at.and_utc().timestamp_millis() as f64 / 1000.0,
             },
         ))
     }
@@ -89,6 +91,7 @@ impl TryFrom<crate::data::entity::object::Model> for Object {
             ),
             data,
             last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
+            created_at: model.created_at.and_utc().timestamp_millis() as f64 / 1000.0,
         })
     }
 }

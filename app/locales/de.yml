@@ -1,4 +1,5 @@
 common:
+  age: Alter
   berries: Beeren
   berry_growth: Beerenwachstum
   chunk_borders: Chunkgrenzen

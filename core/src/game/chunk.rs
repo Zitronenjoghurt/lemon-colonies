@@ -48,6 +48,7 @@ impl Chunk {
             obj.pos = object.pos.local;
             obj.data = object.data;
             obj.last_update = object.last_update;
+            obj.created_at = object.created_at;
         } else {
             self.objects.insert(
                 object.id,
@@ -55,6 +56,7 @@ impl Chunk {
                     pos: object.pos.local,
                     data: object.data,
                     last_update: object.last_update,
+                    created_at: object.created_at,
                 },
             );
         }
@@ -84,6 +86,7 @@ pub struct ChunkObject {
     pub pos: LocalCoords,
     pub data: ObjectData,
     pub last_update: f64,
+    pub created_at: f64,
 }
 
 impl ChunkObject {
