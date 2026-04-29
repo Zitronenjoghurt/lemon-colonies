@@ -1,0 +1,25 @@
+common:
+  berries: x
+  berry_growth: x
+  chunk_borders: x
+  display_x: x
+  kind: x
+  latency: x
+  loaded_chunks: x
+  loaded_objects: x
+  logout: x
+  mouse_position: x
+  object_bounds: x
+  object_collisions: x
+  place_verb: x
+  position: x
+  server_time: x
+  ui_scale: x
+object:
+  bush: x
+  bush.blueberry: x
+  bush.raspberry: x
+  bush.golberry: x
+window:
+  debug: x
+  settings: x

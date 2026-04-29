@@ -3,22 +3,77 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
+
     <title>Lemon Colonies</title>
+    <meta content="Lemon Colonies is a simple cooperative idle colony builder. Build, gather, and grow alongside other players in a shared world."
+          name="description">
+    <meta content="#f0e060" name="theme-color">
+
+    <meta content="website" property="og:type">
+    <meta content="Lemon Colonies" property="og:site_name">
+    <meta content="Lemon Colonies" property="og:title">
+    <meta content="A simple cooperative idle colony builder. Build, gather, and grow alongside other players in a shared world."
+          property="og:description">
+    <meta content="public/og-image.png" property="og:image">
+
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Lemon Colonies" name="twitter:title">
+    <meta content="A simple cooperative colony builder." name="twitter:description">
+    <meta content="public/og-image.png" name="twitter:image">
+
+    <link href="public/favicon.ico" rel="icon">
+    <link href="public/apple-touch-icon.png" rel="apple-touch-icon">
+    <link href="public/manifest.json" rel="manifest">
     <link href="public/styles.css" rel="stylesheet">
 </head>
 <body>
 <div id="loading-spinner">Loading…</div>
+
 <div id="login-screen">
-    <h1>Lemon Colonies</h1>
-    <p>A simple cooperative colony builder :)</p>
-    <a class="login-btn" href="/api/auth/discord/login">
-        <svg class="bi bi-discord" height="16" viewBox="0 0 16 16" width="16"
-             xmlns="http://www.w3.org/2000/svg">
-            <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
-        </svg>
-        Continue with Discord
-    </a>
+    <main class="landing">
+        <header class="hero">
+            <img alt="" aria-hidden="true" class="logo" src="public/icon-192.png">
+            <h1>Lemon Colonies</h1>
+            <p class="tagline">A simple cooperative idle colony builder</p>
+        </header>
+
+        <p class="about">Build, gather, and grow alongside other players in a shared world. Develop your colony,
+            manage resources, and cooperate with the colonies around you to thrive.</p>
+
+        <p class="notice">
+            <strong>Public Alpha</strong> — Gameplay is very barebones right now.
+            Expect bugs, missing features, and occasional resets as we build things out.
+        </p>
+
+        <section class="login-section">
+            <a class="login-btn" href="/api/auth/discord/login">
+                <svg height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
+                </svg>
+                Continue with Discord
+            </a>
+        </section>
+
+        <p class="discord-note">
+            We use Discord just to recognise you, the same way some sites let you "Sign in with Google".
+            Lemon Colonies <strong>cannot</strong> read your messages, see which servers you're in,
+            or post anything on your behalf. All the game receives is your username, avatar and a discord ID.
+            Those will never be shared with anyone else. The game will assign you a random username on first start.
+        </p>
+
+        <aside class="mobile-notice">
+            <svg aria-hidden="true" fill="none" height="44" stroke="currentColor" stroke-linecap="round"
+                 stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="44"
+                 xmlns="http://www.w3.org/2000/svg">
+                <rect height="20" rx="2" ry="2" width="14" x="5" y="2"/>
+                <line x1="12" x2="12.01" y1="18" y2="18"/>
+            </svg>
+            <h2>Not made for mobile</h2>
+            <p>Lemon Colonies needs a keyboard and a bigger screen. Open this page on a desktop or laptop to play.</p>
+        </aside>
+    </main>
 </div>
+
 <canvas id="glcanvas" style="display:none;" tabindex="1"></canvas>
 <script src="public/gl.js"></script>
 <script src="public/storage.js"></script>

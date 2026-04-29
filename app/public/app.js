@@ -3,6 +3,16 @@
     const canvas = document.getElementById("glcanvas");
     const spinner = document.getElementById("loading-spinner");
 
+    const isMobile = window.matchMedia(
+        "(max-width: 720px), (pointer: coarse) and (hover: none)"
+    ).matches;
+
+    if (isMobile) {
+        spinner.style.display = "none";
+        loginScreen.style.display = "block";
+        return;
+    }
+
     try {
         const res = await fetch("/api/me", {credentials: "same-origin"});
         spinner.style.display = "none";
@@ -21,10 +31,10 @@
             });
             load("lemon-colonies-app.wasm");
         } else {
-            loginScreen.style.display = "flex";
+            loginScreen.style.display = "block";
         }
     } catch {
         spinner.style.display = "none";
-        loginScreen.style.display = "flex";
+        loginScreen.style.display = "block";
     }
 })();

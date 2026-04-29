@@ -13,6 +13,7 @@ pub enum Locale {
     #[default]
     English = 0,
     German = 1,
+    French = 2,
 }
 
 impl Locale {
@@ -20,6 +21,7 @@ impl Locale {
         match id {
             "en" => Some(Self::English),
             "de" => Some(Self::German),
+            "fr" => Some(Self::French),
             _ => None,
         }
     }
@@ -28,6 +30,7 @@ impl Locale {
         match self {
             Self::English => "en",
             Self::German => "de",
+            Self::French => "fr",
         }
     }
 
@@ -45,6 +48,7 @@ impl Display for Locale {
         match self {
             Self::English => write!(f, "English"),
             Self::German => write!(f, "Deutsch"),
+            Self::French => write!(f, "Français"),
         }
     }
 }
