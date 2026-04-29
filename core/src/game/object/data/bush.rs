@@ -39,6 +39,10 @@ impl BushObject {
         self.berries = self.berries.saturating_add(new_berries);
         self.growth -= new_berries as f64;
         self.growth = self.growth.clamp(0.0, 1.0);
+
+        if self.berries >= self.max_berries() {
+            self.growth = 0.0;
+        }
     }
 
     pub fn growth_rate(&self, id: ObjectId) -> f64 {
@@ -66,6 +70,10 @@ impl BushObject {
                 }
             }
         }
+    }
+
+    pub fn can_interact(&self) -> bool {
+        self.berries > 0
     }
 }
 

@@ -99,6 +99,10 @@ impl ChunkObject {
     pub fn apply_command(&mut self, command_kind: ObjectCommandKind) -> ObjectCommandResult {
         self.data.apply_command(command_kind)
     }
+
+    pub fn can_interact(&self) -> bool {
+        self.data.can_interact()
+    }
 }
 
 #[cfg(feature = "data")]

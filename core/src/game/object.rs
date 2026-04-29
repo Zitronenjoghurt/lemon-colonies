@@ -55,6 +55,10 @@ impl Object {
     ) -> command::ObjectCommandResult {
         self.data.apply_command(command.kind)
     }
+
+    pub fn can_interact(&self) -> bool {
+        self.data.can_interact()
+    }
 }
 
 #[cfg(feature = "data")]

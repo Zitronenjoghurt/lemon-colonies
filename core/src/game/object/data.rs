@@ -91,4 +91,10 @@ impl ObjectData {
             Self::Bush(bush) => bush.apply_command(command_kind),
         }
     }
+
+    pub fn can_interact(&self) -> bool {
+        match self {
+            Self::Bush(bush) => bush.can_interact(),
+        }
+    }
 }
