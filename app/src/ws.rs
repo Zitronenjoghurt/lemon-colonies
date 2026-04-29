@@ -1,4 +1,5 @@
 use egui_macroquad::macroquad::time::get_time;
+use lemon_colonies_core::game::object::command::ObjectCommand;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
@@ -101,8 +102,16 @@ impl Ws {
         self.send_bytes(&ClientMessage::OwnedChunks.as_bytes());
     }
 
+    pub fn request_all_resources(&mut self) {
+        self.send_bytes(&ClientMessage::AllResources.as_bytes());
+    }
+
     pub fn request_user_info(&mut self) {
         self.send_bytes(&ClientMessage::UserInfo.as_bytes());
+    }
+
+    pub fn send_object_command(&mut self, command: ObjectCommand) {
+        self.send_bytes(&ClientMessage::ObjectCommand(command).as_bytes());
     }
 }
 

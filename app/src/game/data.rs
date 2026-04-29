@@ -1,4 +1,5 @@
 use crate::ws::fetchable::Fetchable;
+use lemon_colonies_core::game::resource::ResourceBag;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::types::user_info::PrivateUserInfo;
 use std::collections::HashSet;
@@ -7,6 +8,7 @@ use std::collections::HashSet;
 pub struct ClientData {
     pub colony_positions: Fetchable<HashSet<ChunkCoords>>,
     pub owned_chunks: Fetchable<HashSet<ChunkCoords>>,
+    pub resources: Fetchable<ResourceBag>,
     pub user_info: Fetchable<PrivateUserInfo>,
 }
 
@@ -20,6 +22,11 @@ impl ClientData {
         if self.owned_chunks.needs_fetch() {
             self.owned_chunks.set_pending();
             ws.request_owned_chunks();
+        }
+
+        if self.resources.needs_fetch() {
+            self.resources.set_pending();
+            ws.request_all_resources();
         }
 
         if self.user_info.needs_fetch() {

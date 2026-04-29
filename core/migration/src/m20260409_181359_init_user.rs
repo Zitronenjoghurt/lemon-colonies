@@ -40,10 +40,56 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        manager
+            .create_table(
+                Table::create()
+                    .table(UserResources::Table)
+                    .if_not_exists()
+                    .col(uuid(UserResources::UserId).not_null())
+                    .col(small_integer(UserResources::ResourceId).not_null())
+                    .col(big_integer(UserResources::Amount).default(Expr::val(0)))
+                    .col(timestamp(UserResources::CreatedAt).default(Expr::current_timestamp()))
+                    .col(timestamp(UserResources::UpdatedAt).default(Expr::current_timestamp()))
+                    .primary_key(
+                        Index::create()
+                            .col(UserResources::UserId)
+                            .col(UserResources::ResourceId),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(UserResources::Table, UserResources::UserId)
+                            .to(User::Table, User::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .get_connection()
+            .execute_unprepared(
+                "CREATE TRIGGER trigger_user_resources_updated_at
+                     BEFORE UPDATE ON user_resources
+                     FOR EACH ROW
+                     EXECUTE FUNCTION set_updated_at();",
+            )
+            .await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .get_connection()
+            .execute_unprepared(
+                "DROP TRIGGER IF EXISTS trigger_user_resources_updated_at ON user_resources;",
+            )
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(UserResources::Table).to_owned())
+            .await?;
+
         manager
             .get_connection()
             .execute_unprepared(
@@ -68,6 +114,16 @@ enum User {
     Username,
     Permissions,
     RateLimitInfractions,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+enum UserResources {
+    Table,
+    UserId,
+    ResourceId,
+    Amount,
     CreatedAt,
     UpdatedAt,
 }

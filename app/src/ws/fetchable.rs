@@ -55,7 +55,6 @@ impl<T> Fetchable<T> {
 
     pub fn set_value(&mut self, value: T) {
         self.value = Some(value);
-        self.state = FetchState::Done { at: get_time() };
     }
 
     pub fn value(&self) -> Option<&T> {
@@ -64,5 +63,11 @@ impl<T> Fetchable<T> {
 
     pub fn is_pending(&self) -> bool {
         matches!(self.state, FetchState::Pending { .. })
+    }
+
+    pub fn update(&mut self, f: impl FnOnce(&mut T)) {
+        if let Some(value) = self.value.as_mut() {
+            f(value);
+        }
     }
 }

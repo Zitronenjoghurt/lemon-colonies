@@ -9,6 +9,7 @@ pub mod colony;
 pub mod colony_chunk;
 pub mod object;
 pub mod user;
+pub mod user_resources;
 
 #[async_trait::async_trait]
 pub trait Store {

@@ -126,6 +126,12 @@ impl App {
                 debug!("Received chunk update: {:?}", update);
                 self.game.handle_chunk_update(update);
             }
+            ServerMessage::ResourceUpdate(resources) => {
+                self.game.handle_resource_update(resources);
+            }
+            ServerMessage::ResourceUpdateAll(resources) => {
+                self.game.handle_resource_update_all(resources);
+            }
             ServerMessage::OwnedChunks(chunks) => {
                 self.game.handle_owned_chunks(chunks);
             }

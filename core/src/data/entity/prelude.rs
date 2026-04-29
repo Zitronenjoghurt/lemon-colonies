@@ -5,3 +5,4 @@ pub use super::colony::Entity as Colony;
 pub use super::colony_chunk::Entity as ColonyChunk;
 pub use super::object::Entity as Object;
 pub use super::user::Entity as User;
+pub use super::user_resources::Entity as UserResources;

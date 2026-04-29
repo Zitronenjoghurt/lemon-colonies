@@ -9,7 +9,7 @@ use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use lemon_colonies_core::data::store::Store;
 use lemon_colonies_core::math::rect::Rect;
-use lemon_colonies_core::messages::server::chunk_update::ChunkUpdateMessage;
+use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
 use std::collections::HashSet;
 use tokio::sync::mpsc;
@@ -106,7 +106,7 @@ impl Websocket {
         self.chunk_subscriptions.subscribe(connection_id, rect)
     }
 
-    pub fn send_chunk_update(&self, update: ChunkUpdateMessage) {
+    pub fn send_chunk_update(&self, update: ChunkUpdate) {
         let connections = self
             .chunk_subscriptions
             .connections_for_chunk(update.coords);

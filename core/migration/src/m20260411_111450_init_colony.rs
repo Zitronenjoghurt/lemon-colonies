@@ -60,6 +60,16 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
+            .create_index(
+                Index::create()
+                    .name("idx_colony_user_id")
+                    .table(Colony::Table)
+                    .col(Colony::UserId)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
             .create_table(
                 Table::create()
                     .table(ColonyChunk::Table)
@@ -130,6 +140,15 @@ impl MigrationTrait for Migration {
 
         manager
             .drop_table(Table::drop().table(ColonyChunk::Table).to_owned())
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_colony_user_id")
+                    .table(Colony::Table)
+                    .to_owned(),
+            )
             .await?;
 
         manager

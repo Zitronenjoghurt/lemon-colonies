@@ -60,8 +60,9 @@ impl BushObject {
                     self.berries = 0;
                     self.harvest_count += 1;
                     ObjectCommandResult::receive_resources(self.kind.resource_id(), berries)
+                        .with_dirty(true)
                 } else {
-                    ObjectCommandResult::None
+                    ObjectCommandResult::none()
                 }
             }
         }

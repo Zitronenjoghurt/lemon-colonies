@@ -3,9 +3,9 @@ use crate::data::store::Store;
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
 use crate::math::coords::ChunkCoords;
-use sea_orm::ColumnTrait;
 use sea_orm::QueryFilter;
-use sea_orm::{Condition, DatabaseConnection, EntityTrait, ExprTrait};
+use sea_orm::{ColumnTrait, Condition, ExprTrait};
+use sea_orm::{DatabaseConnection, EntityTrait};
 
 pub struct ChunkStore {
     connection: DatabaseConnection,

@@ -1,7 +1,7 @@
 use crate::error::CoreResult;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::sqlx::PgPool;
-use sea_orm::{ConnectOptions, DatabaseConnection};
+use sea_orm::{ConnectOptions, DatabaseConnection, DatabaseTransaction, TransactionTrait};
 use tracing::info;
 
 pub mod entity;
@@ -15,6 +15,7 @@ pub struct Data {
     pub colony_chunk: store::colony_chunk::ColonyChunkStore,
     pub object: store::object::ObjectStore,
     pub user: store::user::UserStore,
+    pub user_resources: store::user_resources::UserResourcesStore,
 }
 
 impl Data {
@@ -31,6 +32,7 @@ impl Data {
             colony_chunk: store::colony_chunk::ColonyChunkStore::new(&connection),
             object: store::object::ObjectStore::new(&connection),
             user: store::user::UserStore::new(&connection),
+            user_resources: store::user_resources::UserResourcesStore::new(&connection),
             connection,
         };
         data.apply_migrations().await?;
@@ -40,6 +42,10 @@ impl Data {
 
     pub fn pool(&self) -> &PgPool {
         self.connection.get_postgres_connection_pool()
+    }
+
+    pub async fn begin_txn(&self) -> CoreResult<DatabaseTransaction> {
+        self.connection.begin().await.map_err(Into::into)
     }
 
     async fn apply_migrations(&self) -> CoreResult<()> {

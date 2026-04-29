@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::error::{ServerError, ServerResult};
+use crate::server_time;
 use crate::state::ServerState;
 use crate::websocket::rate_limiter::{RateLimitResult, RateLimiter};
 use axum::extract::ws::{Message, WebSocket};
@@ -7,13 +8,19 @@ use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
 use lemon_colonies_core::data::entity::object;
 use lemon_colonies_core::data::store::Store;
+use lemon_colonies_core::error::CoreError;
+use lemon_colonies_core::game::object::command::{
+    ObjectCommand, ObjectCommandResult, ObjectCommandResultKind,
+};
 use lemon_colonies_core::game::object::Object;
+use lemon_colonies_core::game::resource::ResourceId;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::ClientMessage;
-use lemon_colonies_core::messages::server::chunk_update::ChunkUpdateMessage;
+use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
+use std::collections::HashSet;
 use std::ops::ControlFlow;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::timeout;
@@ -140,8 +147,11 @@ impl WebsocketConnection {
     async fn handle_client_message(&self, message: ClientMessage) -> ServerResult<()> {
         match message {
             ClientMessage::Ping { client_time } => self.handle_ping(client_time).await?,
+            ClientMessage::AllResources => self.handle_all_resources().await?,
             ClientMessage::ColonyPositions => self.handle_colony_positions().await?,
+            ClientMessage::Resources(resource_ids) => self.handle_resources(resource_ids).await?,
             ClientMessage::SubscribeToChunks(rect) => self.handle_chunk_subscription(rect).await?,
+            ClientMessage::ObjectCommand(command) => self.handle_object_command(command).await?,
             ClientMessage::ObjectPlacement(placement) => {
                 self.handle_object_placement(placement).await?
             }
@@ -155,14 +165,16 @@ impl WebsocketConnection {
 /// Message handling
 impl WebsocketConnection {
     async fn handle_ping(&self, client_time: f64) -> ServerResult<()> {
-        let server_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs_f64();
         self.respond(ServerMessage::Pong {
             client_time,
-            server_time,
+            server_time: server_time(),
         });
+        Ok(())
+    }
+
+    async fn handle_all_resources(&self) -> ServerResult<()> {
+        let resources = self.state.data.user_resources.get_all(self.user_id).await?;
+        self.respond(ServerMessage::ResourceUpdateAll(resources));
         Ok(())
     }
 
@@ -215,6 +227,38 @@ impl WebsocketConnection {
         Ok(())
     }
 
+    async fn handle_resources(&self, resource_ids: HashSet<ResourceId>) -> ServerResult<()> {
+        let resources = self
+            .state
+            .data
+            .user_resources
+            .get_multiple(self.user_id, &resource_ids)
+            .await?;
+        self.respond(ServerMessage::ResourceUpdate(resources));
+        Ok(())
+    }
+
+    async fn handle_object_command(&self, command: ObjectCommand) -> ServerResult<()> {
+        let server_time = server_time();
+        if let Some((result, model)) = self
+            .state
+            .service
+            .object
+            .handle_command(server_time, command)
+            .await?
+        {
+            let dirty = result.dirty;
+            self.handle_object_command_result(result).await?;
+            if dirty {
+                let object = Object::try_from(model)?;
+                let chunk_update = ChunkUpdate::update_object(object.pos.chunk, object);
+                self.state.ws.send_chunk_update(chunk_update);
+            }
+        }
+
+        Ok(())
+    }
+
     async fn handle_object_placement(&self, placement: ObjectPlacement) -> ServerResult<()> {
         let rect = placement.collision_rect();
 
@@ -235,7 +279,7 @@ impl WebsocketConnection {
 
         let object_model = self.state.data.object.insert(active).await?;
         let object = Object::try_from(object_model)?;
-        let chunk_update = ChunkUpdateMessage::update_object(chunk_coords, object);
+        let chunk_update = ChunkUpdate::update_object(chunk_coords, object);
         self.state.ws.send_chunk_update(chunk_update);
 
         Ok(())
@@ -262,6 +306,37 @@ impl WebsocketConnection {
             self.state.service.user.private_info(&user),
         ));
 
+        Ok(())
+    }
+}
+
+// Object command result handling
+impl WebsocketConnection {
+    async fn handle_object_command_result(&self, result: ObjectCommandResult) -> ServerResult<()> {
+        match result.kind {
+            ObjectCommandResultKind::None => {}
+            ObjectCommandResultKind::ReceiveResources { id, amount } => {
+                self.handle_object_command_receive_resources(id, amount)
+                    .await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn handle_object_command_receive_resources(
+        &self,
+        id: ResourceId,
+        amount: u64,
+    ) -> ServerResult<()> {
+        let txn = self.state.data.begin_txn().await?;
+        let updated = self
+            .state
+            .data
+            .user_resources
+            .adjust(&txn, self.user_id, &[(id, amount as i64)])
+            .await?;
+        txn.commit().await.map_err(CoreError::from)?;
+        self.respond(ServerMessage::ResourceUpdate(updated));
         Ok(())
     }
 }

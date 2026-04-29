@@ -95,3 +95,22 @@ impl TryFrom<crate::data::entity::object::Model> for Object {
         })
     }
 }
+
+#[cfg(feature = "data")]
+impl TryFrom<&Object> for crate::data::entity::object::ActiveModel {
+    type Error = CoreError;
+
+    fn try_from(obj: &Object) -> CoreResult<Self> {
+        Ok(Self {
+            id: sea_orm::Unchanged(obj.id.into()),
+            data: sea_orm::Set(
+                serde_json::to_value(&obj.data).map_err(|_| CoreError::InvalidObjectData)?,
+            ),
+            x: sea_orm::Set(obj.pos.local.x as i16),
+            y: sea_orm::Set(obj.pos.local.y as i16),
+            chunk_x: sea_orm::Set(obj.pos.chunk.x),
+            chunk_y: sea_orm::Set(obj.pos.chunk.y),
+            ..Default::default()
+        })
+    }
+}

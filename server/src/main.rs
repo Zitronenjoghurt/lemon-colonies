@@ -2,6 +2,7 @@ use crate::config::Config;
 use axum::routing::get;
 use axum::Router;
 use std::net::SocketAddr;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tower_http::services::ServeDir;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -74,4 +75,11 @@ fn init_logging() {
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
+}
+
+pub fn server_time() -> f64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64()
 }

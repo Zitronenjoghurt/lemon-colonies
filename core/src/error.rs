@@ -1,3 +1,5 @@
+use crate::game::resource::ResourceId;
+
 pub type CoreResult<T> = Result<T, CoreError>;
 
 #[derive(Debug, thiserror::Error)]
@@ -23,15 +25,21 @@ pub enum CoreError {
     InvalidTerrain,
     #[error("Chunk not owned")]
     ChunkNotOwned,
+    #[error("Insufficient resources: {resource_id} ({available} available, {requested} requested)")]
+    InsufficientResources {
+        resource_id: ResourceId,
+        available: u64,
+        requested: u64,
+    },
     #[error("Object collides with another object")]
     ObjectCollision,
 }
 
 impl CoreError {
     pub fn is_user_error(&self) -> bool {
-        match self {
-            Self::ChunkNotOwned | Self::ObjectCollision => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Self::ChunkNotOwned | Self::InsufficientResources { .. } | Self::ObjectCollision
+        )
     }
 }

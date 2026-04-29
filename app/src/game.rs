@@ -11,9 +11,10 @@ use egui_macroquad::macroquad::logging::debug;
 use egui_macroquad::macroquad::prelude::get_time;
 use lemon_colonies_core::game::chunk::{Chunk, ChunkObject};
 use lemon_colonies_core::game::object::ObjectId;
+use lemon_colonies_core::game::resource::ResourceBag;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
-use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdateKind, ChunkUpdateMessage};
+use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdate, ChunkUpdateKind};
 use lemon_colonies_core::types::user_info::PrivateUserInfo;
 
 pub mod atlas;
@@ -63,13 +64,13 @@ impl Game {
             if !pointer_consumed {
                 self.object_place
                     .update(ws, &self.camera, &self.world, &self.data);
-            }
-        }
 
-        if !self.object_place.wants_to_place() && !pointer_consumed {
-            self.object_hover.update(&self.camera, &self.world);
-        } else {
-            self.object_hover.reset();
+                if !self.object_place.wants_to_place() {
+                    self.object_hover.update(ws, &self.camera, &self.world);
+                } else {
+                    self.object_hover.reset();
+                }
+            }
         }
     }
 
@@ -136,7 +137,7 @@ impl Game {
             .set_value(positions.iter().copied().collect());
     }
 
-    pub fn handle_chunk_update(&mut self, update: ChunkUpdateMessage) {
+    pub fn handle_chunk_update(&mut self, update: ChunkUpdate) {
         match update.kind {
             ChunkUpdateKind::UpdateObject(object) => self.world.update_object(object),
         }
@@ -146,6 +147,16 @@ impl Game {
         self.data
             .owned_chunks
             .set_value(chunks.iter().copied().collect());
+    }
+
+    pub fn handle_resource_update(&mut self, resources: ResourceBag) {
+        self.data
+            .resources
+            .update(|bag| bag.merge_override(resources));
+    }
+
+    pub fn handle_resource_update_all(&mut self, resources: ResourceBag) {
+        self.data.resources.set_value(resources);
     }
 
     pub fn handle_user_info(&mut self, info: PrivateUserInfo) {

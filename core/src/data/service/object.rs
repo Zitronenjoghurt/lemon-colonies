@@ -2,7 +2,9 @@ use crate::data::entity::object;
 use crate::data::store::Store;
 use crate::data::Data;
 use crate::error::{CoreError, CoreResult};
+use crate::game::object::command::{ObjectCommand, ObjectCommandResult};
 use crate::game::object::data::ObjectData;
+use crate::game::object::Object;
 use crate::math::coords::{ChunkCoords, LocalCoords};
 use crate::math::rect::Rect;
 use futures::TryStreamExt;
@@ -47,5 +49,28 @@ impl ObjectService {
         }
 
         Ok(())
+    }
+
+    pub async fn handle_command(
+        &self,
+        server_time: f64,
+        command: ObjectCommand,
+    ) -> CoreResult<Option<(ObjectCommandResult, object::Model)>> {
+        let Some(model) = self.data.object.find_by_id(command.target).await? else {
+            return Ok(None);
+        };
+
+        let mut object = Object::try_from(model.clone())?;
+        object.tick(server_time);
+        let result = object.apply_command(command);
+
+        let model = if result.dirty {
+            let active = object::ActiveModel::try_from(&object)?;
+            self.data.object.update(active).await?
+        } else {
+            model
+        };
+
+        Ok(Some((result, model)))
     }
 }

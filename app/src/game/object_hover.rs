@@ -1,5 +1,8 @@
 use crate::game::camera::{mouse_screen_coords, ClientCamera};
 use crate::game::world::ClientWorld;
+use crate::ws::Ws;
+use egui_macroquad::macroquad::input::{is_mouse_button_pressed, MouseButton};
+use lemon_colonies_core::game::object::command::ObjectCommand;
 use lemon_colonies_core::game::object::ObjectId;
 use lemon_colonies_core::math::coords::{ChunkCoords, ChunkLocal};
 use lemon_colonies_core::math::point::Point;
@@ -14,7 +17,9 @@ pub struct ObjectHover {
 }
 
 impl ObjectHover {
-    pub fn update(&mut self, camera: &ClientCamera, world: &ClientWorld) {
+    pub fn update(&mut self, ws: &mut Ws, camera: &ClientCamera, world: &ClientWorld) {
+        self.handle_interact(ws);
+
         let mouse_world = camera.screen_to_world(mouse_screen_coords());
         let mouse_pos = mouse_world.chunk_local();
         if Some(mouse_pos) == self.last_check {
@@ -60,5 +65,21 @@ impl ObjectHover {
 
     pub fn get(&self) -> Option<(ObjectId, ChunkLocal)> {
         self.hovered_object
+    }
+}
+
+// Input handling
+impl ObjectHover {
+    pub fn handle_interact(&mut self, ws: &mut Ws) {
+        let Some((id, _)) = self.get() else {
+            return;
+        };
+
+        if !is_mouse_button_pressed(MouseButton::Left) {
+            return;
+        }
+
+        let command = ObjectCommand::interact(id);
+        ws.send_object_command(command);
     }
 }

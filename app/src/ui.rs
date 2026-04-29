@@ -7,6 +7,7 @@ use crate::ui::windows::WindowId;
 use egui_macroquad::egui;
 use egui_macroquad::egui::{Id, TopBottomPanel, Widget};
 pub use egui_phosphor::regular as icon;
+use lemon_colonies_core::game::resource::ResourceId;
 
 pub mod state;
 mod widgets;
@@ -72,6 +73,17 @@ impl<'a> UiViewer<'a> {
             ui.separator();
             self.window_button(ui, WindowId::Settings);
             self.window_button(ui, WindowId::Debug);
+
+            if let Some(resources) = self.game.data.resources.value() {
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.label("BLUEBERRIES");
+                    ui.label(resources.get(ResourceId::Blueberry).to_string());
+                });
+
+                ui.separator();
+            }
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ProfileMenu::new(&self.game.data, self.http).ui(ui);
