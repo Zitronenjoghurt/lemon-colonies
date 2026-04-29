@@ -13,6 +13,7 @@ pub struct Model {
     pub username: String,
     pub permissions: i64,
     pub rate_limit_infractions: i16,
+    pub last_login: DateTime,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }

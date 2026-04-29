@@ -1,4 +1,5 @@
 use crate::error::CoreResult;
+use migration::prelude::chrono;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::sqlx::PgPool;
 use sea_orm::{ConnectOptions, DatabaseConnection, DatabaseTransaction, TransactionTrait};
@@ -7,6 +8,8 @@ use tracing::info;
 pub mod entity;
 pub mod service;
 pub mod store;
+
+pub use sea_orm::{IntoActiveModel, Set};
 
 pub struct Data {
     connection: DatabaseConnection,
@@ -54,4 +57,8 @@ impl Data {
         info!("Database migrations applied!");
         Ok(())
     }
+}
+
+pub fn chrono_now() -> chrono::NaiveDateTime {
+    chrono::Utc::now().naive_utc()
 }

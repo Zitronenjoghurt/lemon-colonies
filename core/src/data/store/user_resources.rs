@@ -1,8 +1,8 @@
+use crate::data::chrono_now;
 use crate::data::entity::user_resources;
 use crate::data::store::Store;
 use crate::error::{CoreError, CoreResult};
 use crate::game::resource::{ResourceBag, ResourceId};
-use sea_orm::sea_query::prelude::chrono;
 use sea_orm::sea_query::OnConflict;
 use sea_orm::QueryFilter;
 use sea_orm::{
@@ -61,7 +61,7 @@ impl UserResourcesStore {
             .map(|r| (r.resource_id, r.amount as u64))
             .collect();
 
-        let now = chrono::Utc::now().naive_utc();
+        let now = chrono_now();
         let mut models = Vec::with_capacity(adjustments.len());
         let mut result = HashMap::with_capacity(adjustments.len());
 

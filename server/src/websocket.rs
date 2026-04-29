@@ -8,6 +8,7 @@ use dashmap::DashMap;
 use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use lemon_colonies_core::data::store::Store;
+use lemon_colonies_core::data::{chrono_now, IntoActiveModel, Set};
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
@@ -146,6 +147,10 @@ pub async fn ws_handler(
     if user.rate_limit_infractions >= 3 {
         return Err(ApiError::BannedRateLimitAbuse);
     }
+
+    let mut active_user = user.into_active_model();
+    active_user.last_login = Set(chrono_now());
+    let user = state.data.user.update(active_user).await?;
 
     let message_size = state.config.max_ws_message_size_kb * 1024;
     let write_buffer_size = state.config.max_ws_outbound_buffer_size_kb * 1024;

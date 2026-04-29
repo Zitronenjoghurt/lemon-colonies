@@ -8,7 +8,7 @@ use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
 use lemon_colonies_core::data::entity::object;
 use lemon_colonies_core::data::store::Store;
-use lemon_colonies_core::error::CoreError;
+use lemon_colonies_core::error::{CoreError, CoreResult};
 use lemon_colonies_core::game::object::command::{
     ObjectCommand, ObjectCommandResult, ObjectCommandResultKind,
 };
