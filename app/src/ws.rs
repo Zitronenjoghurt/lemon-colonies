@@ -1,7 +1,10 @@
 use egui_macroquad::macroquad::time::get_time;
 use lemon_colonies_core::game::object::command::ObjectCommand;
+use lemon_colonies_core::game::object::purchase::PurchasableObject;
+use lemon_colonies_core::math::coords::ChunkLocal;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
+use lemon_colonies_core::messages::client::object_purchase::ObjectPurchase;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use quad_net::web_socket::WebSocket;
@@ -96,6 +99,10 @@ impl Ws {
 
     pub fn place_object(&mut self, placement: ObjectPlacement) {
         self.send_bytes(&ClientMessage::ObjectPlacement(placement).as_bytes());
+    }
+
+    pub fn purchase_object(&mut self, kind: PurchasableObject, pos: ChunkLocal) {
+        self.send_bytes(&ClientMessage::ObjectPurchase(ObjectPurchase { kind, pos }).as_bytes());
     }
 
     pub fn request_owned_chunks(&mut self) {

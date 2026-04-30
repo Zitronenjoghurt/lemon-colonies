@@ -1,11 +1,13 @@
 use crate::i18n::Locale;
 use crate::storage::Storage;
+use crate::ui::panels::ActionPanelPosition;
 use egui_macroquad::egui;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Settings {
     pub locale: Locale,
     pub ui_scale: f32,
+    pub action_panel_pos: ActionPanelPosition,
     pub display_chunk_borders: bool,
     pub display_object_bounds: bool,
     pub display_object_collisions: bool,
@@ -18,6 +20,7 @@ impl Default for Settings {
         Self {
             locale: Locale::default(),
             ui_scale: Self::DEFAULT_UI_SCALE,
+            action_panel_pos: ActionPanelPosition::default(),
             display_chunk_borders: false,
             display_object_bounds: false,
             display_object_collisions: false,

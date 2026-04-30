@@ -1,9 +1,12 @@
 common:
+  action_panel_position: Action panel position
   age: Age
   berries: Berries
   berry_growth: Berry growth
+  bottom: Bottom
   chunk_borders: Chunk borders
   display_x: 'Display %{x}'
+  growth: Growth
   kind: Kind
   latency: Latency
   loaded_chunks: Loaded chunks
@@ -15,12 +18,20 @@ common:
   place_verb: Place
   position: Position
   server_time: Server time
+  top: Top
   ui_scale: UI scale
 object:
   bush: Bush
   bush.blueberry: Blueberry Bush
   bush.raspberry: Raspberry Bush
   bush.golberry: Golberry Bush
+resource:
+  blueberry: Blueberry
+  blueberry.plural: Blueberries
+  raspberry: Raspberry
+  raspberry.plural: Raspberries
+  golberry: Golberry
+  golberry.plural: Golberries
 window:
   debug: Debug
   settings: Settings

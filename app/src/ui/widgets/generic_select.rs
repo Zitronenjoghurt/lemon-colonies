@@ -1,4 +1,4 @@
-use crate::ui::icon;
+use crate::ui::phosphor;
 use egui::{Ui, Widget};
 use egui_macroquad::egui;
 use std::fmt::Display;
@@ -85,7 +85,7 @@ where
                 if ui
                     .add_enabled(
                         !is_default,
-                        egui::Button::new(icon::ARROW_COUNTER_CLOCKWISE).small(),
+                        egui::Button::new(phosphor::ARROW_COUNTER_CLOCKWISE).small(),
                     )
                     .on_hover_text(format!("Reset to {}", default_value))
                     .clicked()

@@ -2,6 +2,7 @@ use crate::ui::windows::WindowId;
 use heck::ToSnakeCase;
 use lemon_colonies_core::game::object::data::bush::BushKind;
 use lemon_colonies_core::game::object::kind::ObjectKind;
+use lemon_colonies_core::game::resource::ResourceId;
 use lemon_colonies_core::lingo::Lingo;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -81,6 +82,14 @@ pub trait Translatable {
     }
 }
 
+pub trait TranslatablePlural: Translatable {
+    fn plural_key(&self) -> String;
+
+    fn tp(&self) -> String {
+        t!(self.plural_key()).to_string()
+    }
+}
+
 impl Translatable for ObjectKind {
     fn key(&self) -> String {
         format!("object.{}", format!("{:?}", self).to_snake_case())
@@ -102,6 +111,18 @@ impl Translatable for Lingo {
 impl Translatable for WindowId {
     fn key(&self) -> String {
         format!("window.{}", format!("{:?}", self).to_snake_case())
+    }
+}
+
+impl Translatable for ResourceId {
+    fn key(&self) -> String {
+        format!("resource.{}", format!("{:?}", self).to_snake_case())
+    }
+}
+
+impl TranslatablePlural for ResourceId {
+    fn plural_key(&self) -> String {
+        format!("resource.{}.plural", format!("{:?}", self).to_snake_case())
     }
 }
 

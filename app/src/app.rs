@@ -3,6 +3,7 @@ use crate::game::Game;
 use crate::http::Http;
 use crate::server_time::ServerTime;
 use crate::settings::Settings;
+use crate::ui::icon::IconCache;
 use crate::ui::state::UiState;
 use crate::ui::{setup_egui, UiViewer};
 use crate::ws::Ws;
@@ -21,6 +22,7 @@ pub struct App {
     ws: Ws,
     server_time: ServerTime,
     fps_counter: FpsCounter,
+    egui_icon_cache: Option<IconCache>,
     egui_initialized: bool,
 }
 
@@ -38,6 +40,7 @@ impl App {
             ws,
             server_time: ServerTime::default(),
             fps_counter: FpsCounter::default(),
+            egui_icon_cache: None,
             egui_initialized: false,
         })
     }
@@ -73,6 +76,7 @@ impl App {
     pub fn render_ui(&mut self) {
         egui_macroquad::ui(|ctx| {
             if !self.egui_initialized {
+                self.egui_icon_cache = Some(IconCache::load(ctx));
                 setup_egui(ctx);
                 self.egui_initialized = true;
             }
@@ -81,6 +85,7 @@ impl App {
                 fps_counter: self.fps_counter,
                 game: &mut self.game,
                 http: &mut self.http,
+                icons: self.egui_icon_cache.as_ref().unwrap(),
                 server_time: &self.server_time,
                 state: &mut self.ui,
                 toasts: &mut self.toasts,

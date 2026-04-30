@@ -5,12 +5,14 @@ use strum_macros::EnumIter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum Atlas {
+    BaseItems,
     BaseOverworld,
 }
 
 impl Atlas {
     pub fn data(&self) -> &'static [u8] {
         match self {
+            Atlas::BaseItems => include_bytes!("../../assets/base/Items.png"),
             Atlas::BaseOverworld => include_bytes!("../../assets/base/Overworld.png"),
         }
     }

@@ -1,3 +1,4 @@
+use crate::game::icon::Icon;
 use std::collections::HashMap;
 use std::fmt::Display;
 use strum_macros::{EnumCount, EnumIter, FromRepr};
@@ -10,6 +11,16 @@ pub enum ResourceId {
     Blueberry = 0,
     Raspberry = 1,
     Golberry = 2,
+}
+
+impl ResourceId {
+    pub fn icon(&self) -> Icon {
+        match self {
+            Self::Blueberry => Icon::Blueberries,
+            Self::Raspberry => Icon::Raspberries,
+            Self::Golberry => Icon::Golberries,
+        }
+    }
 }
 
 impl Display for ResourceId {

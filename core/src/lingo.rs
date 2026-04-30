@@ -2,11 +2,14 @@ use strum_macros::EnumIter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum Lingo {
+    ActionPanelPosition,
     Age,
     Berries,
     BerryGrowth,
+    Bottom,
     ChunkBorders,
     DisplayX,
+    Growth,
     Kind,
     Latency,
     LoadedChunks,
@@ -18,5 +21,6 @@ pub enum Lingo {
     PlaceVerb,
     Position,
     ServerTime,
+    Top,
     UiScale,
 }

@@ -1,63 +1,51 @@
 use crate::i18n::Translatable;
-use crate::server_time::ServerTime;
-use crate::tl;
-use crate::ui::widgets::object_data::ObjectDataWidget;
 use egui_macroquad::egui;
-use egui_macroquad::egui::{Grid, Widget};
-use lemon_colonies_core::game::chunk::ChunkObject;
-use lemon_colonies_core::game::object::ObjectId;
-use lemon_colonies_core::lingo::Lingo::{Age, Position};
-use lemon_colonies_core::math::coords::ChunkCoords;
+use egui_macroquad::egui::{Response, RichText, Ui, Widget};
+use lemon_colonies_core::game::object::data::ObjectData;
+use lemon_colonies_core::lingo::Lingo::{Berries, Growth};
 
 pub struct HoverInfo<'a> {
-    pub object_id: ObjectId,
-    pub chunk_coords: ChunkCoords,
-    pub object: &'a ChunkObject,
-    pub server_time: &'a ServerTime,
+    data: &'a ObjectData,
 }
 
 impl<'a> HoverInfo<'a> {
-    pub fn new(
-        object_id: ObjectId,
-        chunk_coords: ChunkCoords,
-        object: &'a ChunkObject,
-        server_time: &'a ServerTime,
-    ) -> Self {
-        Self {
-            object_id,
-            chunk_coords,
-            object,
-            server_time,
+    pub fn new(data: &'a ObjectData) -> Self {
+        Self { data }
+    }
+
+    fn spacing(&self, ui: &mut Ui) {
+        ui.add(egui::Separator::default().spacing(2.0));
+    }
+
+    fn name(&self) -> String {
+        match self.data {
+            ObjectData::Bush(bush) => bush.kind.t().to_string(),
+        }
+    }
+
+    fn info(&self, ui: &mut Ui) {
+        match self.data {
+            ObjectData::Bush(bush) => {
+                ui.small(Berries.t());
+                ui.small(format!("{}/{}", bush.berries, bush.max_berries()));
+                self.spacing(ui);
+                ui.small(Growth.t());
+                ui.small(format!("{:.2}%", bush.growth * 100.0));
+            }
         }
     }
 }
 
 impl Widget for HoverInfo<'_> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        ui.vertical_centered_justified(|ui| {
-            ui.heading(tl!(self.object.data.kind()));
-            ui.separator();
+    fn ui(self, ui: &mut Ui) -> Response {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| ui.label(RichText::new(self.name()).small().strong()));
 
-            ObjectDataWidget::new(&self.object.data).ui(ui);
+            self.spacing(ui);
 
-            ui.separator();
-
-            let spacing = ui.spacing().item_spacing.x;
-            let col_width = (ui.available_width() - spacing) / 2.0;
-            Grid::new("hover_info_grid")
-                .num_columns(2)
-                .min_col_width(col_width)
-                .show(ui, |ui| {
-                    let pos = self.chunk_coords.with_local(self.object.pos).world();
-                    ui.label(Position.t());
-                    ui.label(pos.to_string());
-                    ui.end_row();
-
-                    let age = self.server_time.elapsed_since(self.object.created_at);
-                    ui.label(Age.t());
-                    ui.label(age.to_string());
-                    ui.end_row();
-                });
+            ui.horizontal(|ui| {
+                self.info(ui);
+            });
         })
         .response
     }

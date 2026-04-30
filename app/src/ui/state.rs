@@ -1,9 +1,13 @@
 use crate::storage::Storage;
+use crate::ui::panels::info::InfoPanelTab;
 use crate::ui::windows::WindowId;
 use std::collections::HashSet;
 
+const SAVE_INTERVAL: f64 = 30.0;
+
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct UiState {
+    pub info_panel_tab: InfoPanelTab,
     windows: HashSet<WindowId>,
     #[serde(skip, default)]
     last_save: f64,
@@ -28,7 +32,7 @@ impl UiState {
 
     pub fn update(&mut self) {
         let now = egui_macroquad::macroquad::time::get_time();
-        if now - self.last_save > 30.0 {
+        if now - self.last_save > SAVE_INTERVAL {
             self.save();
             self.last_save = now;
         }

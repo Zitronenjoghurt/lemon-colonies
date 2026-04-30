@@ -1,8 +1,10 @@
 use crate::i18n::Translatable;
 use crate::settings::Settings;
+use crate::ui::panels::ActionPanelPosition;
+use crate::ui::widgets::generic_select::GenericSelect;
 use crate::ui::widgets::reset_slider::ResetSlider;
 use egui_macroquad::egui::{Grid, Response, ScrollArea, Ui, Widget};
-use lemon_colonies_core::lingo::Lingo::*;
+use lemon_colonies_core::lingo::Lingo::{ActionPanelPosition as ActionPanelPositionLingo, UiScale};
 
 pub struct SettingsWidget<'a> {
     pub settings: &'a mut Settings,
@@ -26,6 +28,16 @@ impl<'a> SettingsWidget<'a> {
         if response.drag_stopped() || (response.changed() && !response.dragged()) {
             self.settings.dirty = true;
         }
+        ui.end_row();
+
+        ui.label(ActionPanelPositionLingo.t());
+        self.settings.dirty |= GenericSelect::from_enum(
+            &mut self.settings.action_panel_pos,
+            "action_panel_position_select",
+        )
+        .default_value(ActionPanelPosition::default())
+        .ui(ui)
+        .changed();
         ui.end_row();
     }
 }

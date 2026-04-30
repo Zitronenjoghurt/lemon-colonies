@@ -1,4 +1,4 @@
-use crate::ui::icon;
+use crate::ui::phosphor;
 use egui_macroquad::egui::emath::Numeric;
 use egui_macroquad::egui::{Button, Response, Slider, Ui, Widget};
 
@@ -44,7 +44,7 @@ impl<V: Numeric> Widget for ResetSlider<'_, V> {
             if ui
                 .add_enabled(
                     !is_default,
-                    Button::new(icon::ARROW_COUNTER_CLOCKWISE).small(),
+                    Button::new(phosphor::ARROW_COUNTER_CLOCKWISE).small(),
                 )
                 .on_hover_text(format!("Reset to {}", self.default.to_f64()))
                 .clicked()

@@ -17,6 +17,7 @@ use lemon_colonies_core::game::resource::ResourceId;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
+use lemon_colonies_core::messages::client::object_purchase::ObjectPurchase;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
@@ -155,6 +156,9 @@ impl WebsocketConnection {
             ClientMessage::ObjectPlacement(placement) => {
                 self.handle_object_placement(placement).await?
             }
+            ClientMessage::ObjectPurchase(purchase) => {
+                self.handle_object_purchase(purchase).await?
+            }
             ClientMessage::OwnedChunks => self.handle_owned_chunks().await?,
             ClientMessage::UserInfo => self.handle_user_info().await?,
         };
@@ -259,8 +263,20 @@ impl WebsocketConnection {
         Ok(())
     }
 
-    async fn handle_object_placement(&self, placement: ObjectPlacement) -> ServerResult<()> {
-        let rect = placement.collision_rect();
+    async fn handle_object_placement(&self, _placement: ObjectPlacement) -> ServerResult<()> {
+        // ToDo: Rework for admin-use only
+        Ok(())
+    }
+
+    async fn handle_object_purchase(&self, purchase: ObjectPurchase) -> ServerResult<()> {
+        let rect = purchase.collision_rect();
+
+        let txn = self.state.data.begin_txn().await?;
+        self.state
+            .data
+            .user_resources
+            .adjust(&txn, self.user_id, &purchase.kind.resource_adjustments())
+            .await?;
 
         self.state
             .service
@@ -274,13 +290,15 @@ impl WebsocketConnection {
             .validate_placement_collision(rect)
             .await?;
 
-        let chunk_coords = placement.pos.chunk;
-        let active = object::ActiveModel::try_from(placement)?;
+        let chunk_coords = purchase.pos.chunk;
+        let active = object::ActiveModel::try_from(purchase)?;
 
         let object_model = self.state.data.object.insert(active).await?;
         let object = Object::try_from(object_model)?;
         let chunk_update = ChunkUpdate::update_object(chunk_coords, object);
         self.state.ws.send_chunk_update(chunk_update);
+
+        txn.commit().await.map_err(CoreError::from)?;
 
         Ok(())
     }

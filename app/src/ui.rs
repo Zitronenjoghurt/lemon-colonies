@@ -1,14 +1,12 @@
 use crate::fps_counter::FpsCounter;
-use crate::ui::widgets::generic_select::GenericSelect;
-use crate::ui::widgets::hover_info::HoverInfo;
-use crate::ui::widgets::profile_menu::ProfileMenu;
 use crate::ui::widgets::window_button::WindowButton;
 use crate::ui::windows::WindowId;
 use egui_macroquad::egui;
-use egui_macroquad::egui::{Id, TopBottomPanel, Widget};
-pub use egui_phosphor::regular as icon;
-use lemon_colonies_core::game::resource::ResourceId;
+use egui_macroquad::egui::Widget;
+pub use egui_phosphor::regular as phosphor;
 
+pub mod icon;
+pub mod panels;
 pub mod state;
 mod widgets;
 pub mod windows;
@@ -18,6 +16,7 @@ pub struct UiViewer<'a> {
     pub fps_counter: FpsCounter,
     pub game: &'a mut crate::game::Game,
     pub http: &'a mut crate::http::Http,
+    pub icons: &'a icon::IconCache,
     pub server_time: &'a crate::server_time::ServerTime,
     pub state: &'a mut state::UiState,
     pub toasts: &'a mut egui_notify::Toasts,
@@ -28,12 +27,12 @@ impl<'a> UiViewer<'a> {
     pub fn show(&mut self, ctx: &egui::Context) {
         self.toasts.show(ctx);
 
-        TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            self.top_panel(ui);
-        });
+        panels::meta::show(ctx, self);
+        panels::info::show(ctx, self);
+        panels::action::show(ctx, self);
+        panels::hover::show(ctx, self);
 
         self.show_windows(ctx);
-        self.show_inspector(ctx);
     }
 
     fn show_windows(&mut self, ctx: &egui::Context) {
@@ -41,58 +40,6 @@ impl<'a> UiViewer<'a> {
         for window_id in window_ids {
             window_id.show(self, ctx);
         }
-    }
-
-    fn show_inspector(&mut self, ctx: &egui::Context) {
-        let Some((id, chunk, object)) = self.game.get_hovered_object() else {
-            return;
-        };
-
-        let screen = ctx.screen_rect();
-        let panel_width = screen.width() * 0.25;
-        let panel_height = screen.height() * 0.15;
-        let margin = screen.width() * 0.01;
-
-        egui::Area::new(Id::new("inspector_panel"))
-            .anchor(egui::Align2::LEFT_BOTTOM, [margin, -margin])
-            .interactable(false)
-            .show(ctx, |ui| {
-                egui::Frame::popup(ui.style())
-                    .fill(ui.style().visuals.window_fill().gamma_multiply(0.95))
-                    .show(ui, |ui| {
-                        ui.set_width(panel_width);
-                        ui.set_height(panel_height);
-                        HoverInfo::new(id, chunk, object, self.server_time).ui(ui);
-                    });
-            });
-    }
-
-    fn top_panel(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            ui.label("Lemon Colonies");
-            ui.separator();
-            self.window_button(ui, WindowId::Settings);
-            self.window_button(ui, WindowId::Debug);
-
-            if let Some(resources) = self.game.data.resources.value() {
-                ui.separator();
-
-                ui.horizontal(|ui| {
-                    ui.label("BLUEBERRIES");
-                    ui.label(resources.get(ResourceId::Blueberry).to_string());
-                });
-
-                ui.separator();
-            }
-
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ProfileMenu::new(&self.game.data, self.http).ui(ui);
-                self.settings.dirty |=
-                    GenericSelect::from_enum(&mut self.settings.locale, "locale_select")
-                        .ui(ui)
-                        .changed();
-            });
-        });
     }
 }
 

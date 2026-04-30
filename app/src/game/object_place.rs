@@ -10,21 +10,28 @@ use egui_macroquad::macroquad::input::{is_mouse_button_pressed, MouseButton};
 use egui_macroquad::macroquad::logging::debug;
 use egui_macroquad::macroquad::prelude::Rect as GlamRect;
 use lemon_colonies_core::game::object::data::ObjectData;
+use lemon_colonies_core::game::object::purchase::PurchasableObject;
 use lemon_colonies_core::math::coords::{ChunkCoords, ChunkLocal, WorldCoords};
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 
 #[derive(Default)]
 pub struct ObjectPlace {
     target_data: Option<ObjectData>,
+    purchase: Option<PurchasableObject>,
     collision_detected: bool,
     last_collision: Option<ChunkLocal>,
     continuous: bool,
 }
 
 impl ObjectPlace {
-    pub fn start(&mut self, data: ObjectData) {
+    pub fn place(&mut self, data: ObjectData) {
         self.target_data = Some(data);
         self.continuous = true;
+    }
+
+    pub fn purchase(&mut self, purchase: PurchasableObject) {
+        self.target_data = Some(purchase.object_data());
+        self.purchase = Some(purchase);
     }
 
     pub fn update(
@@ -119,13 +126,18 @@ impl ObjectPlace {
             pos, mouse_world
         );
 
-        ws.place_object(ObjectPlacement {
-            data: data.clone(),
-            pos,
-        });
+        if let Some(purchase) = &self.purchase {
+            ws.purchase_object(*purchase, pos);
+        } else {
+            ws.place_object(ObjectPlacement {
+                data: data.clone(),
+                pos,
+            });
+        }
 
         if !self.continuous {
             self.target_data = None;
+            self.purchase = None;
         }
     }
 }

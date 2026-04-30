@@ -28,6 +28,25 @@ impl Default for BushObject {
 }
 
 impl BushObject {
+    pub fn new(kind: BushKind) -> Self {
+        Self {
+            kind,
+            ..Default::default()
+        }
+    }
+
+    pub fn blueberry() -> Self {
+        Self::new(BushKind::Blueberry)
+    }
+
+    pub fn raspberry() -> Self {
+        Self::new(BushKind::Raspberry)
+    }
+
+    pub fn golberry() -> Self {
+        Self::new(BushKind::Golberry)
+    }
+
     pub fn tick(&mut self, id: ObjectId, delta: f64) {
         if self.berries >= self.max_berries() {
             return;

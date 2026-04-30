@@ -6,9 +6,6 @@ use crate::server_time::{DateTime, ServerTime};
 use crate::settings::Settings;
 use crate::tl;
 use egui_macroquad::egui::{Grid, Response, Ui, Widget};
-use lemon_colonies_core::game::object::data::bush::BushObject;
-use lemon_colonies_core::game::object::data::ObjectData;
-use lemon_colonies_core::game::object::kind::ObjectKind;
 use lemon_colonies_core::lingo::Lingo::*;
 
 pub struct DebugWidget<'a> {
@@ -116,14 +113,6 @@ impl Widget for DebugWidget<'_> {
                     self.settings.dirty |= ui
                         .checkbox(&mut self.settings.display_object_collisions, "")
                         .changed();
-                    ui.end_row();
-
-                    ui.label(ObjectKind::Bush.t());
-                    if ui.button(PlaceVerb.t()).clicked() {
-                        self.game
-                            .object_place
-                            .start(ObjectData::Bush(BushObject::default()));
-                    }
                     ui.end_row();
                 });
         })

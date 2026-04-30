@@ -35,11 +35,20 @@ impl Sprite {
         }
     }
 
-    pub const fn from_object(atlas: Atlas, x: f32, y: f32, object: &ObjectData) -> Self {
+    pub const fn from_object(atlas: Atlas, x: u32, y: u32, object: &ObjectData) -> Self {
         Self {
             atlas,
-            src: Rect::new(x, y, object.width(), object.height()),
+            src: Rect::new(x as f32, y as f32, object.width(), object.height()),
             pivot: vec2(object.pivot().0, object.pivot().1),
+            y_sort_offset: 0.0,
+        }
+    }
+
+    pub const fn from_icon(atlas: Atlas, x: u32, y: u32, height: u32, width: u32) -> Self {
+        Self {
+            atlas,
+            src: Rect::new(x as f32, y as f32, width as f32, height as f32),
+            pivot: vec2(width as f32 / 2.0, height as f32 / 2.0),
             y_sort_offset: 0.0,
         }
     }
@@ -164,17 +173,17 @@ impl HasSprite for ObjectData {
         match self {
             Self::Bush(bush) => {
                 if bush.berries == 0 {
-                    Sprite::from_object(Atlas::BaseOverworld, 3.0, 654.0, self)
+                    Sprite::from_object(Atlas::BaseOverworld, 3, 654, self)
                 } else {
                     match bush.kind {
                         BushKind::Blueberry => {
-                            Sprite::from_object(Atlas::BaseOverworld, 51.0, 654.0, self)
+                            Sprite::from_object(Atlas::BaseOverworld, 51, 654, self)
                         }
                         BushKind::Raspberry => {
-                            Sprite::from_object(Atlas::BaseOverworld, 99.0, 654.0, self)
+                            Sprite::from_object(Atlas::BaseOverworld, 99, 654, self)
                         }
                         BushKind::Golberry => {
-                            Sprite::from_object(Atlas::BaseOverworld, 147.0, 654.0, self)
+                            Sprite::from_object(Atlas::BaseOverworld, 147, 654, self)
                         }
                     }
                 }

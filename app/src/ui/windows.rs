@@ -1,5 +1,5 @@
 use crate::i18n::Translatable;
-use crate::ui::{icon, UiViewer};
+use crate::ui::{phosphor, UiViewer};
 use egui_macroquad::egui;
 use egui_macroquad::egui::Id;
 use strum_macros::EnumIter;
@@ -33,8 +33,8 @@ impl WindowId {
 
     pub fn icon(&self) -> &'static str {
         match self {
-            WindowId::Debug => icon::BUG,
-            WindowId::Settings => icon::GEAR,
+            WindowId::Debug => phosphor::BUG,
+            WindowId::Settings => phosphor::GEAR,
         }
     }
 

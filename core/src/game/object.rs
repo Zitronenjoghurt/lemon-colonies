@@ -7,6 +7,7 @@ use uuid::Uuid;
 pub mod command;
 pub mod data;
 pub mod kind;
+pub mod purchase;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]

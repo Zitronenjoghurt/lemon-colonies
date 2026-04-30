@@ -1,9 +1,12 @@
 common:
+  action_panel_position: Aktionspanel Position
   age: Alter
   berries: Beeren
   berry_growth: Beerenwachstum
+  bottom: Unten
   chunk_borders: Chunkgrenzen
   display_x: '%{x} anzeigen'
+  growth: Wachstum
   kind: Art
   latency: Latenz
   loaded_chunks: Geladene Chunks
@@ -15,12 +18,20 @@ common:
   place_verb: Platzieren
   position: Position
   server_time: Serverzeit
+  top: Oben
   ui_scale: UI Skalierung
 object:
   bush: Busch
   bush.blueberry: Blaubeerbusch
   bush.raspberry: Himbeerbusch
   bush.golberry: Goldbeerenbusch
+resource:
+  blueberry: Blaubeere
+  blueberry.plural: Blaubeeren
+  raspberry: Himbeere
+  raspberry.plural: Himbeeren
+  golberry: Golbeere
+  golberry.plural: Golbeeren
 window:
   debug: Debug
   settings: Einstellungen

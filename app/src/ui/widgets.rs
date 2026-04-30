@@ -1,5 +1,6 @@
 pub mod connection_status;
 pub mod debug;
+pub mod detail_info;
 pub mod generic_select;
 pub mod hover_info;
 mod object_data;
