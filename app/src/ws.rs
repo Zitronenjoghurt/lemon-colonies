@@ -1,7 +1,8 @@
+use std::collections::HashSet;
 use egui_macroquad::macroquad::time::get_time;
 use lemon_colonies_core::game::object::command::ObjectCommand;
 use lemon_colonies_core::game::object::purchase::PurchasableObject;
-use lemon_colonies_core::math::coords::ChunkLocal;
+use lemon_colonies_core::math::coords::{ChunkCoords, ChunkLocal};
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::client::object_placement::ObjectPlacement;
 use lemon_colonies_core::messages::client::object_purchase::ObjectPurchase;
@@ -119,6 +120,10 @@ impl Ws {
 
     pub fn send_object_command(&mut self, command: ObjectCommand) {
         self.send_bytes(&ClientMessage::ObjectCommand(command).as_bytes());
+    }
+
+    pub fn request_objects_in_chunks(&mut self, objects: HashSet<ChunkCoords>) {
+        self.send_bytes(&ClientMessage::ObjectsInChunks(objects).as_bytes());
     }
 }
 

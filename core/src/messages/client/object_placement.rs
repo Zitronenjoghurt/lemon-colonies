@@ -15,7 +15,7 @@ impl ObjectPlacement {
     }
 
     pub fn collision_rect(&self) -> Rect<f32> {
-        self.data.collision_rect(self.pos.world())
+        self.data.visuals().collision_rect(self.pos.world())
     }
 }
 

@@ -15,7 +15,10 @@ impl ObjectPurchase {
     }
 
     pub fn collision_rect(&self) -> Rect<f32> {
-        self.kind.object_data().collision_rect(self.pos.world())
+        self.kind
+            .object_data()
+            .visuals()
+            .collision_rect(self.pos.world())
     }
 }
 

@@ -94,6 +94,13 @@ impl BushObject {
     pub fn can_interact(&self) -> bool {
         self.berries > 0
     }
+
+    pub const fn visuals(&self) -> BushVisuals {
+        BushVisuals {
+            kind: self.kind,
+            has_berries: self.berries > 0,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
@@ -131,4 +138,12 @@ impl BushKind {
             Self::Golberry => ResourceId::Golberry,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct BushVisuals {
+    pub kind: BushKind,
+    pub has_berries: bool,
 }

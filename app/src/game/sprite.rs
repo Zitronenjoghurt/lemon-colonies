@@ -4,7 +4,7 @@ use egui_macroquad::macroquad::prelude::{
     Vec2, WHITE,
 };
 use lemon_colonies_core::game::object::data::bush::BushKind;
-use lemon_colonies_core::game::object::data::ObjectData;
+use lemon_colonies_core::game::object::visuals::ObjectVisuals;
 use lemon_colonies_core::game::terrain::Terrain;
 use lemon_colonies_core::math::coords::WorldCoords;
 
@@ -35,11 +35,11 @@ impl Sprite {
         }
     }
 
-    pub const fn from_object(atlas: Atlas, x: u32, y: u32, object: &ObjectData) -> Self {
+    pub const fn from_object(atlas: Atlas, x: u32, y: u32, visuals: &ObjectVisuals) -> Self {
         Self {
             atlas,
-            src: Rect::new(x as f32, y as f32, object.width(), object.height()),
-            pivot: vec2(object.pivot().0, object.pivot().1),
+            src: Rect::new(x as f32, y as f32, visuals.width(), visuals.height()),
+            pivot: vec2(visuals.pivot().0, visuals.pivot().1),
             y_sort_offset: 0.0,
         }
     }
@@ -168,11 +168,11 @@ impl HasSprite for Terrain {
     }
 }
 
-impl HasSprite for ObjectData {
+impl HasSprite for ObjectVisuals {
     fn sprite(&self) -> Sprite {
         match self {
             Self::Bush(bush) => {
-                if bush.berries == 0 {
+                if !bush.has_berries {
                     Sprite::from_object(Atlas::BaseOverworld, 3, 654, self)
                 } else {
                     match bush.kind {

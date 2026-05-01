@@ -8,6 +8,10 @@ pub fn show(ctx: &egui::Context, v: &mut UiViewer) {
         return;
     };
 
+    let Some(data) = &object.data else {
+        return;
+    };
+
     let mouse_pos = ctx.input(|i| i.pointer.hover_pos().unwrap_or_default());
 
     egui::Area::new(Id::new("hover_panel"))
@@ -19,7 +23,7 @@ pub fn show(ctx: &egui::Context, v: &mut UiViewer) {
                 .fill(ui.style().visuals.window_fill().gamma_multiply(0.8))
                 .show(ui, |ui| {
                     ui.spacing_mut().interact_size.y = 0.0;
-                    HoverInfo::new(&object.data).ui(ui);
+                    HoverInfo::new(data).ui(ui);
                 });
         });
 }

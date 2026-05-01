@@ -75,9 +75,11 @@ impl ObjectPlace {
             return;
         }
 
-        let offset = object.pivot_center_offset();
+        let visuals = object.visuals();
+
+        let offset = visuals.pivot_center_offset();
         let world_coords = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
-        let collision_rect = object.collision_rect(world_coords);
+        let collision_rect = visuals.collision_rect(world_coords);
 
         let (chunk_min, chunk_max) = collision_rect.chunk_range();
         for chunk_y in chunk_min.y..=chunk_max.y {
@@ -117,7 +119,7 @@ impl ObjectPlace {
             return;
         };
 
-        let offset = data.pivot_center_offset();
+        let offset = data.visuals().pivot_center_offset();
         let world_coords = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
         let pos = world_coords.chunk_local();
 
@@ -148,11 +150,12 @@ impl ObjectPlace {
         let Some(object) = &self.target_data else {
             return;
         };
+        let visuals = object.visuals();
 
         camera.apply();
 
         let mouse_world = camera.screen_to_world(mouse_screen_coords());
-        let offset = object.pivot_center_offset();
+        let offset = visuals.pivot_center_offset();
         let anchor = mouse_world.floor() + WorldCoords::new(offset.0, offset.1);
         let tint = if self.collision_detected {
             Color::new(1.0, 0.2, 0.2, 0.5)
@@ -160,7 +163,7 @@ impl ObjectPlace {
             Color::new(1.0, 1.0, 1.0, 0.5)
         };
 
-        let collision = object.collision_rect(anchor);
+        let collision = visuals.collision_rect(anchor);
         let collision_rect = GlamRect::new(
             collision.min.x,
             collision.min.y,
@@ -168,7 +171,7 @@ impl ObjectPlace {
             collision.height(),
         );
 
-        let sprite_draw = SpriteDraw::new(object.sprite(), anchor)
+        let sprite_draw = SpriteDraw::new(visuals.sprite(), anchor)
             .with_tint(tint)
             .with_collision(collision_rect);
 

@@ -1,5 +1,7 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::chunk::ChunkObject;
+use crate::game::object::command::ObjectCommandResult;
+use crate::game::object::visuals::ObjectVisuals;
 use crate::math::coords::{ChunkCoords, ChunkLocal, LocalCoords};
 use data::ObjectData;
 use uuid::Uuid;
@@ -8,6 +10,7 @@ pub mod command;
 pub mod data;
 pub mod kind;
 pub mod purchase;
+pub mod visuals;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
@@ -38,27 +41,39 @@ impl ObjectId {
 pub struct Object {
     pub id: ObjectId,
     pub pos: ChunkLocal,
-    pub data: ObjectData,
+    pub data: Option<ObjectData>,
+    pub visuals: ObjectVisuals,
     pub last_update: f64,
     pub created_at: f64,
 }
 
 impl Object {
     pub fn tick(&mut self, server_time: f64) {
+        let Some(data) = &mut self.data else {
+            return;
+        };
+
         let delta = server_time - self.last_update;
-        self.data.tick(self.id, delta);
+        data.tick(self.id, delta);
         self.last_update = server_time;
+
+        self.visuals = data.visuals();
     }
 
-    pub fn apply_command(
-        &mut self,
-        command: command::ObjectCommand,
-    ) -> command::ObjectCommandResult {
-        self.data.apply_command(command.kind)
+    pub fn apply_command(&mut self, command: command::ObjectCommand) -> ObjectCommandResult {
+        if let Some(data) = &mut self.data {
+            data.apply_command(command.kind)
+        } else {
+            ObjectCommandResult::none()
+        }
     }
 
     pub fn can_interact(&self) -> bool {
-        self.data.can_interact()
+        self.data.as_ref().is_some_and(|data| data.can_interact())
+    }
+
+    pub fn anonymize(&mut self) {
+        self.data = None;
     }
 }
 
@@ -73,7 +88,8 @@ impl TryFrom<crate::data::entity::object::Model> for (ObjectId, ChunkObject) {
             ObjectId::from(model.id),
             ChunkObject {
                 pos: LocalCoords::new(model.x as u8, model.y as u8),
-                data,
+                visuals: data.visuals(),
+                data: Some(data),
                 last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
                 created_at: model.created_at.and_utc().timestamp_millis() as f64 / 1000.0,
             },
@@ -94,7 +110,8 @@ impl TryFrom<crate::data::entity::object::Model> for Object {
                 ChunkCoords::new(model.chunk_x, model.chunk_y),
                 LocalCoords::new(model.x as u8, model.y as u8),
             ),
-            data,
+            visuals: data.visuals(),
+            data: Some(data),
             last_update: model.updated_at.and_utc().timestamp_millis() as f64 / 1000.0,
             created_at: model.created_at.and_utc().timestamp_millis() as f64 / 1000.0,
         })

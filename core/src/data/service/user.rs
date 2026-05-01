@@ -7,6 +7,7 @@ use crate::game::config::GameConfig;
 use crate::math::coords::ChunkCoords;
 use crate::types::user_info::{PrivateUserInfo, PublicUserInfo};
 use sea_orm::{ColumnTrait, IntoActiveModel, Set};
+use std::collections::HashSet;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -74,14 +75,14 @@ impl UserService {
         self.initiate_new_user(new_user).await
     }
 
-    pub async fn get_owned_chunk_coords(&self, user_id: Uuid) -> CoreResult<Vec<ChunkCoords>> {
+    pub async fn get_owned_chunk_coords(&self, user_id: Uuid) -> CoreResult<HashSet<ChunkCoords>> {
         let Some((_, colony_chunks)) = self
             .data
             .user
             .find_by_with_owned_chunks(user::Column::Id.eq(user_id))
             .await?
         else {
-            return Ok(Vec::new());
+            return Ok(HashSet::new());
         };
 
         Ok(colony_chunks

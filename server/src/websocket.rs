@@ -102,25 +102,42 @@ impl Websocket {
         self.users.get(&user_id).map(|s| s.len()).unwrap_or(0)
     }
 
+    pub fn connection_user_id(&self, connection_id: ConnectionId) -> Option<Uuid> {
+        self.connections.get(&connection_id).map(|c| c.0)
+    }
+
     /// Returns the previous rect if there is one.
     pub fn subscribe_to_chunks(&self, connection_id: Uuid, rect: Rect<i32>) -> Option<Rect<i32>> {
         self.chunk_subscriptions.subscribe(connection_id, rect)
     }
 
-    pub fn send_chunk_update(&self, update: ChunkUpdate) {
+    pub fn send_chunk_update(&self, author_user_id: Uuid, mut update: ChunkUpdate) {
         let connections = self
             .chunk_subscriptions
             .connections_for_chunk(update.coords);
 
         if connections.len() == 1 {
             let connection_id = connections.first().unwrap();
+            let Some(user_id) = self.connection_user_id(*connection_id) else {
+                return;
+            };
+            if user_id != author_user_id {
+                update.anonymize();
+            }
             self.send_to_connection(*connection_id, ServerMessage::ChunkUpdate(update))
         } else {
             for connection_id in self
                 .chunk_subscriptions
                 .connections_for_chunk(update.coords)
             {
-                self.send_to_connection(connection_id, ServerMessage::ChunkUpdate(update.clone()))
+                let Some(user_id) = self.connection_user_id(connection_id) else {
+                    continue;
+                };
+                let mut update = update.clone();
+                if user_id != author_user_id {
+                    update.anonymize();
+                }
+                self.send_to_connection(connection_id, ServerMessage::ChunkUpdate(update))
             }
         }
     }

@@ -1,6 +1,7 @@
 use crate::error::CoreResult;
 use crate::game::object::command::ObjectCommand;
 use crate::game::resource::ResourceId;
+use crate::math::coords::ChunkCoords;
 use crate::math::rect::Rect;
 use crate::messages::client::object_placement::ObjectPlacement;
 use crate::messages::client::object_purchase::ObjectPurchase;
@@ -15,6 +16,7 @@ pub enum ClientMessage {
     AllResources,
     ColonyPositions,
     ObjectCommand(ObjectCommand),
+    ObjectsInChunks(HashSet<ChunkCoords>),
     ObjectPlacement(ObjectPlacement),
     ObjectPurchase(ObjectPurchase),
     Resources(HashSet<ResourceId>),
@@ -40,6 +42,7 @@ impl ClientMessage {
             Self::AllResources => 3.0,
             Self::ColonyPositions => 3.0,
             Self::ObjectCommand(_) => 6.0,
+            Self::ObjectsInChunks(_) => 6.0,
             Self::ObjectPlacement(_) => 6.0,
             Self::ObjectPurchase(_) => 6.0,
             Self::Resources(_) => 3.0,

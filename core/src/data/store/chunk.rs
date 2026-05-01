@@ -1,4 +1,4 @@
-use crate::data::entity::{chunk, object};
+use crate::data::entity::chunk;
 use crate::data::store::Store;
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
@@ -29,7 +29,6 @@ impl ChunkStore {
 
     pub async fn load_existing(&self, pos: ChunkCoords) -> CoreResult<Option<Chunk>> {
         let row = chunk::Entity::find_by_id((pos.x, pos.y))
-            .find_with_related(object::Entity)
             .all(self.db())
             .await?
             .into_iter()
@@ -56,7 +55,6 @@ impl ChunkStore {
         }
         let rows = chunk::Entity::find()
             .filter(condition)
-            .find_with_related(object::Entity)
             .all(self.db())
             .await?;
         rows.into_iter().map(Chunk::try_from).collect()

@@ -8,6 +8,7 @@ use crate::types::chunk_visibility::ChunkVisibility;
 use futures::TryStreamExt;
 use sea_orm::prelude::Uuid;
 use sea_orm::{ColumnTrait, ExprTrait};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 pub struct ChunkService {
@@ -59,7 +60,11 @@ impl ChunkService {
         Ok(())
     }
 
-    pub async fn validate_chunks_owned(&self, user_id: Uuid, rect: Rect<f32>) -> CoreResult<()> {
+    pub async fn validate_all_chunks_owned_in_rect(
+        &self,
+        user_id: Uuid,
+        rect: Rect<f32>,
+    ) -> CoreResult<()> {
         let (min_chunk, max_chunk) = rect.chunk_range();
         for chunk_y in min_chunk.y..=max_chunk.y {
             for chunk_x in min_chunk.x..=max_chunk.x {
@@ -68,6 +73,17 @@ impl ChunkService {
             }
         }
 
+        Ok(())
+    }
+
+    pub async fn validate_all_chunk_coords_owned(
+        &self,
+        user_id: Uuid,
+        coords: &HashSet<ChunkCoords>,
+    ) -> CoreResult<()> {
+        for chunk_coords in coords {
+            self.validate_chunk_owned(user_id, *chunk_coords).await?;
+        }
         Ok(())
     }
 }

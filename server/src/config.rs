@@ -8,7 +8,9 @@ pub struct Config {
     pub integrations: IntegrationsConfig,
     pub session_secret: String,
     pub chunk_batch_size: usize,
+    pub object_fetch_batch_size: usize,
     pub max_chunk_subscription_area: i32,
+    pub max_object_fetch_chunk_count: usize,
     pub max_user_connection_count: usize,
     pub max_ws_message_size_kb: usize,
     pub max_ws_outbound_buffer_size_kb: usize,
@@ -27,9 +29,15 @@ impl Config {
             chunk_batch_size: std::env::var("CHUNK_BATCH_SIZE")
                 .unwrap_or("100".to_string())
                 .parse::<usize>()?,
+            object_fetch_batch_size: std::env::var("OBJECT_FETCH_BATCH_SIZE")
+                .unwrap_or("1000".to_string())
+                .parse::<usize>()?,
             max_chunk_subscription_area: std::env::var("MAX_CHUNK_SUBSCRIPTION_AREA")
                 .unwrap_or("1000".to_string())
                 .parse::<i32>()?,
+            max_object_fetch_chunk_count: std::env::var("MAX_OBJECT_FETCH_CHUNK_COUNT")
+                .unwrap_or("1000".to_string())
+                .parse::<usize>()?,
             max_user_connection_count: std::env::var("MAX_USER_CONNECTION_COUNT")
                 .unwrap_or("10".to_string())
                 .parse::<usize>()?,

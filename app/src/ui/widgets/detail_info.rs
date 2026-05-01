@@ -35,10 +35,14 @@ impl<'a> DetailInfo<'a> {
 impl Widget for DetailInfo<'_> {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         ui.vertical_centered_justified(|ui| {
-            ui.heading(tl!(self.object.data.kind()));
+            let Some(data) = &self.object.data else {
+                return;
+            };
+
+            ui.heading(tl!(data.kind()));
             ui.separator();
 
-            ObjectDataWidget::new(&self.object.data).ui(ui);
+            ObjectDataWidget::new(data).ui(ui);
 
             ui.separator();
 

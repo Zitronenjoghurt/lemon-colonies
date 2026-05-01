@@ -1,6 +1,7 @@
 use crate::error::{CoreError, CoreResult};
 use crate::game::object::command::{ObjectCommandKind, ObjectCommandResult};
 use crate::game::object::data::ObjectData;
+use crate::game::object::visuals::ObjectVisuals;
 use crate::game::object::{Object, ObjectId};
 use crate::game::terrain::{Terrain, TERRAIN_SIZE};
 use crate::math::coords::{ChunkCoords, LocalCoords};
@@ -47,6 +48,7 @@ impl Chunk {
         if let Some(obj) = self.objects.get_mut(&object.id) {
             obj.pos = object.pos.local;
             obj.data = object.data;
+            obj.visuals = object.visuals;
             obj.last_update = object.last_update;
             obj.created_at = object.created_at;
         } else {
@@ -55,6 +57,7 @@ impl Chunk {
                 ChunkObject {
                     pos: object.pos.local,
                     data: object.data,
+                    visuals: object.visuals,
                     last_update: object.last_update,
                     created_at: object.created_at,
                 },
@@ -65,7 +68,7 @@ impl Chunk {
     pub fn rect_collides_with_object_collision(&self, rect: Rect<f32>) -> bool {
         for obj in self.objects.values() {
             let pos = obj.pos.with_chunk(self.pos).world();
-            let collision = obj.data.collision_rect(pos);
+            let collision = obj.visuals.collision_rect(pos);
             if rect.overlaps_rect(&collision) {
                 return true;
             }
@@ -84,24 +87,35 @@ impl Chunk {
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
 pub struct ChunkObject {
     pub pos: LocalCoords,
-    pub data: ObjectData,
+    pub data: Option<ObjectData>,
+    pub visuals: ObjectVisuals,
     pub last_update: f64,
     pub created_at: f64,
 }
 
 impl ChunkObject {
     pub fn tick(&mut self, id: ObjectId, server_time: f64) {
+        let Some(data) = &mut self.data else {
+            return;
+        };
+
         let delta = server_time - self.last_update;
-        self.data.tick(id, delta);
+        data.tick(id, delta);
         self.last_update = server_time;
+
+        self.visuals = data.visuals();
     }
 
     pub fn apply_command(&mut self, command_kind: ObjectCommandKind) -> ObjectCommandResult {
-        self.data.apply_command(command_kind)
+        if let Some(data) = &mut self.data {
+            data.apply_command(command_kind)
+        } else {
+            ObjectCommandResult::none()
+        }
     }
 
     pub fn can_interact(&self) -> bool {
-        self.data.can_interact()
+        self.data.as_ref().is_some_and(|data| data.can_interact())
     }
 }
 

@@ -11,7 +11,7 @@ use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::Object;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 const CHUNK_RETAIN_PADDING: i32 = 10;
 const CHUNK_BORDER_THICKNESS: f32 = 1.0;
@@ -29,6 +29,7 @@ pub struct WorldDrawSettings {
 #[derive(Default)]
 pub struct ClientWorld {
     chunks: HashMap<ChunkCoords, ClientChunk>,
+    chunks_with_pending_objects: HashSet<ChunkCoords>,
     object_count: usize,
     last_tick: f64,
 }
@@ -71,11 +72,11 @@ impl ClientWorld {
         for chunk in self.chunks.values() {
             for obj in chunk.chunk.objects.values() {
                 let mut draw = SpriteDraw::new(
-                    obj.data.sprite(),
+                    obj.visuals.sprite(),
                     obj.pos.with_chunk(chunk.chunk.pos).world(),
                 );
                 if settings.object_bounds {
-                    let rect = obj.data.bounding_rect(draw.anchor);
+                    let rect = obj.visuals.bounding_rect(draw.anchor);
                     draw = draw.with_bounds(GlamRect::new(
                         rect.min.x,
                         rect.min.y,
@@ -84,7 +85,7 @@ impl ClientWorld {
                     ))
                 }
                 if settings.object_collisions {
-                    let rect = obj.data.collision_rect(draw.anchor);
+                    let rect = obj.visuals.collision_rect(draw.anchor);
                     draw = draw.with_collision(GlamRect::new(
                         rect.min.x,
                         rect.min.y,
@@ -207,6 +208,7 @@ impl ClientWorld {
 
     pub fn insert_chunks(&mut self, chunks: Vec<Chunk>) {
         for chunk in chunks {
+            self.chunks_with_pending_objects.insert(chunk.pos);
             self.chunks.insert(chunk.pos, ClientChunk::new(chunk));
         }
         self.recalculate_object_count();
@@ -233,6 +235,23 @@ impl ClientWorld {
             return;
         };
         chunk.update_object(object);
+        self.recalculate_object_count();
+    }
+
+    pub fn has_pending_objects(&self) -> bool {
+        !self.chunks_with_pending_objects.is_empty()
+    }
+
+    pub fn take_chunks_with_pending_objects(&mut self) -> HashSet<ChunkCoords> {
+        std::mem::take(&mut self.chunks_with_pending_objects)
+    }
+
+    pub fn update_objects(&mut self, objects: Vec<Object>) {
+        for object in objects {
+            if let Some(chunk) = self.chunks.get_mut(&object.pos.chunk) {
+                chunk.update_object(object);
+            }
+        }
         self.recalculate_object_count();
     }
 

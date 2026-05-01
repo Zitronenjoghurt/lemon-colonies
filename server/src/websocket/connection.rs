@@ -5,10 +5,10 @@ use crate::state::ServerState;
 use crate::websocket::rate_limiter::{RateLimitResult, RateLimiter};
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::stream::SplitStream;
-use futures_util::StreamExt;
+use futures_util::{StreamExt, TryStreamExt};
 use lemon_colonies_core::data::entity::object;
 use lemon_colonies_core::data::store::Store;
-use lemon_colonies_core::error::{CoreError, CoreResult};
+use lemon_colonies_core::error::CoreError;
 use lemon_colonies_core::game::object::command::{
     ObjectCommand, ObjectCommandResult, ObjectCommandResultKind,
 };
@@ -23,7 +23,7 @@ use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
 use std::collections::HashSet;
 use std::ops::ControlFlow;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use tokio::time::timeout;
 use tower_sessions_sqlx_store::sqlx::types::Uuid;
 use tracing::{error, info};
@@ -153,6 +153,7 @@ impl WebsocketConnection {
             ClientMessage::Resources(resource_ids) => self.handle_resources(resource_ids).await?,
             ClientMessage::SubscribeToChunks(rect) => self.handle_chunk_subscription(rect).await?,
             ClientMessage::ObjectCommand(command) => self.handle_object_command(command).await?,
+            ClientMessage::ObjectsInChunks(chunks) => self.handle_objects_in_chunks(chunks).await?,
             ClientMessage::ObjectPlacement(placement) => {
                 self.handle_object_placement(placement).await?
             }
@@ -256,8 +257,46 @@ impl WebsocketConnection {
             if dirty {
                 let object = Object::try_from(model)?;
                 let chunk_update = ChunkUpdate::update_object(object.pos.chunk, object);
-                self.state.ws.send_chunk_update(chunk_update);
+                self.state.ws.send_chunk_update(self.user_id, chunk_update);
             }
+        }
+
+        Ok(())
+    }
+
+    async fn handle_objects_in_chunks(&self, chunks: HashSet<ChunkCoords>) -> ServerResult<()> {
+        if chunks.is_empty() || chunks.len() > self.state.config.max_object_fetch_chunk_count {
+            return Ok(());
+        };
+
+        let owned_chunks = self
+            .state
+            .service
+            .user
+            .get_owned_chunk_coords(self.user_id)
+            .await?;
+
+        let mut object_stream = self.state.data.object.stream_by_chunks(&chunks).await?;
+        let mut batch = Vec::with_capacity(self.state.config.object_fetch_batch_size);
+
+        let now = server_time();
+        while let Some(model) = object_stream.try_next().await? {
+            let mut object = Object::try_from(model)?;
+            object.tick(now);
+            if !owned_chunks.contains(&object.pos.chunk) {
+                object.anonymize();
+            }
+            batch.push(object);
+            if batch.len() >= self.state.config.object_fetch_batch_size {
+                self.respond(ServerMessage::Objects(std::mem::replace(
+                    &mut batch,
+                    Vec::with_capacity(self.state.config.object_fetch_batch_size),
+                )));
+            }
+        }
+
+        if !batch.is_empty() {
+            self.respond(ServerMessage::Objects(batch));
         }
 
         Ok(())
@@ -281,7 +320,7 @@ impl WebsocketConnection {
         self.state
             .service
             .chunk
-            .validate_chunks_owned(self.user_id, rect)
+            .validate_all_chunks_owned_in_rect(self.user_id, rect)
             .await?;
 
         self.state
@@ -296,7 +335,7 @@ impl WebsocketConnection {
         let object_model = self.state.data.object.insert(active).await?;
         let object = Object::try_from(object_model)?;
         let chunk_update = ChunkUpdate::update_object(chunk_coords, object);
-        self.state.ws.send_chunk_update(chunk_update);
+        self.state.ws.send_chunk_update(self.user_id, chunk_update);
 
         txn.commit().await.map_err(CoreError::from)?;
 

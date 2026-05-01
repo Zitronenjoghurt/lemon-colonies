@@ -40,7 +40,7 @@ impl ObjectService {
                         .with_local(LocalCoords::new(object.x as u8, object.y as u8))
                         .world();
                     let data: ObjectData = serde_json::from_value(object.data)?;
-                    let object_collision = data.collision_rect(pos);
+                    let object_collision = data.visuals().collision_rect(pos);
                     if rect.overlaps_rect(&object_collision) {
                         return Err(CoreError::ObjectCollision);
                     }

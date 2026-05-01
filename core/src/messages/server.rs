@@ -1,9 +1,11 @@
 use crate::error::CoreResult;
 use crate::game::chunk::Chunk;
+use crate::game::object::Object;
 use crate::game::resource::ResourceBag;
 use crate::math::coords::ChunkCoords;
 use crate::messages::server::chunk_update::ChunkUpdate;
 use crate::types::user_info::PrivateUserInfo;
+use std::collections::HashSet;
 
 pub mod chunk_update;
 
@@ -15,9 +17,10 @@ pub enum ServerMessage {
     ColonyPositions(Vec<ChunkCoords>),
     Chunks(Vec<Chunk>),
     ChunkUpdate(ChunkUpdate),
+    Objects(Vec<Object>),
     ResourceUpdate(ResourceBag),
     ResourceUpdateAll(ResourceBag),
-    OwnedChunks(Vec<ChunkCoords>),
+    OwnedChunks(HashSet<ChunkCoords>),
     UserInfo(PrivateUserInfo),
 }
 

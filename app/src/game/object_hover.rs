@@ -46,7 +46,7 @@ impl ObjectHover {
                 };
                 for (id, obj) in &chunk.objects {
                     let pos = obj.pos.with_chunk(coords).world();
-                    let bounding_rect = obj.data.bounding_rect(pos);
+                    let bounding_rect = obj.visuals.bounding_rect(pos);
                     if bounding_rect.contains_point(&mouse_point) {
                         self.hovered_object = Some((*id, pos.chunk_local()));
                         return;

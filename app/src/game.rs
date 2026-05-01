@@ -10,12 +10,13 @@ use crate::ws::Ws;
 use egui_macroquad::macroquad::logging::debug;
 use egui_macroquad::macroquad::prelude::get_time;
 use lemon_colonies_core::game::chunk::{Chunk, ChunkObject};
-use lemon_colonies_core::game::object::ObjectId;
+use lemon_colonies_core::game::object::{Object, ObjectId};
 use lemon_colonies_core::game::resource::ResourceBag;
 use lemon_colonies_core::math::coords::ChunkCoords;
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdate, ChunkUpdateKind};
 use lemon_colonies_core::types::user_info::PrivateUserInfo;
+use std::collections::HashSet;
 
 pub mod atlas;
 pub mod camera;
@@ -60,6 +61,7 @@ impl Game {
         if ws.is_connected() {
             self.data.update(ws);
             self.update_chunk_subscription(ws);
+            self.update_chunk_objects(ws);
 
             if !pointer_consumed {
                 self.object_place
@@ -110,6 +112,13 @@ impl Game {
         ws.subscribe_chunks(rect);
         self.world.unload_distant_chunks(rect);
     }
+
+    fn update_chunk_objects(&mut self, ws: &mut Ws) {
+        if !self.world.has_pending_objects() {
+            return;
+        }
+        ws.request_objects_in_chunks(self.world.take_chunks_with_pending_objects());
+    }
 }
 
 // Helpers
@@ -143,7 +152,11 @@ impl Game {
         }
     }
 
-    pub fn handle_owned_chunks(&mut self, chunks: Vec<ChunkCoords>) {
+    pub fn handle_objects(&mut self, objects: Vec<Object>) {
+        self.world.update_objects(objects);
+    }
+
+    pub fn handle_owned_chunks(&mut self, chunks: HashSet<ChunkCoords>) {
         self.data
             .owned_chunks
             .set_value(chunks.iter().copied().collect());
