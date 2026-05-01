@@ -74,7 +74,9 @@ impl Websocket {
         let Some(conn) = self.connections.get(&connection_id) else {
             return;
         };
-        let _ = conn.1.try_send(message);
+        if conn.1.try_send(message).is_err() {
+            counter!("ws.outbound_dropped").increment(1);
+        }
     }
 
     pub fn send_to_user(&self, user_id: Uuid, message: ServerMessage) {
@@ -146,21 +148,27 @@ pub async fn ws_handler(
     State(state): State<ServerState>,
 ) -> ApiResult<impl IntoResponse> {
     let Some(user_id) = session.get::<Uuid>("user_id").await? else {
+        counter!("ws.upgrade_rejected", "reason" => "unauthorized").increment(1);
         return Err(ApiError::Unauthorized);
     };
 
     let Some(user) = state.data.user.find_by_id(user_id).await? else {
+        counter!("ws.upgrade_rejected", "reason" => "unauthorized").increment(1);
         return Err(ApiError::Unauthorized);
     };
 
     let connection_count = state.ws.user_connection_count(user.id);
     if connection_count >= state.config.max_user_connection_count {
+        counter!("ws.upgrade_rejected", "reason" => "too_many_connections").increment(1);
         return Err(ApiError::TooManyConnections);
     }
 
     if user.rate_limit_infractions >= 3 {
+        counter!("ws.upgrade_rejected", "reason" => "banned").increment(1);
         return Err(ApiError::BannedRateLimitAbuse);
     }
+
+    counter!("ws.upgrade_accepted").increment(1);
 
     let mut active_user = user.into_active_model();
     active_user.last_login = Set(chrono_now());
@@ -176,6 +184,8 @@ pub async fn ws_handler(
 }
 
 async fn handle_socket(socket: WebSocket, state: ServerState, user_id: Uuid) {
+    let start = std::time::Instant::now();
+
     let (ws_send, ws_receive) = socket.split();
     let (connection_id, rx) = state.ws.register(user_id);
 
@@ -190,6 +200,8 @@ async fn handle_socket(socket: WebSocket, state: ServerState, user_id: Uuid) {
     }
 
     state.ws.unregister(connection_id);
+
+    histogram!("ws.connection_duration_secs").record(start.elapsed().as_secs_f64());
 }
 
 async fn handle_send(

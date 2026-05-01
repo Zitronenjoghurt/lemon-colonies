@@ -21,7 +21,7 @@ use lemon_colonies_core::messages::client::object_purchase::ObjectPurchase;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
-use metrics::gauge;
+use metrics::{counter, gauge};
 use std::collections::HashSet;
 use std::ops::ControlFlow;
 use std::time::Duration;
@@ -58,10 +58,12 @@ impl WebsocketConnection {
                 Ok(Some(Ok(message))) => message,
                 Ok(Some(Err(err))) => {
                     error!("[{}] WebSocket error: {err}", self.user_id);
+                    counter!("ws.disconnect_total", "reason" => "error").increment(1);
                     break;
                 }
                 Ok(None) => {
                     info!("[{}] WebSocket stream closed", self.user_id);
+                    counter!("ws.disconnect_total", "reason" => "stream_closed").increment(1);
                     break;
                 }
                 Err(_) => {
@@ -69,6 +71,7 @@ impl WebsocketConnection {
                         "[{}] Connection timed out (idle for {IDLE_TIMEOUT:?})",
                         self.user_id
                     );
+                    counter!("ws.disconnect_total", "reason" => "idle_timeout").increment(1);
                     break;
                 }
             };
@@ -77,6 +80,7 @@ impl WebsocketConnection {
                 Message::Binary(data) if self.handle_binary(&data).await.is_break() => break,
                 Message::Close(reason) => {
                     info!("[{}] Client closed connection: {reason:?}", self.user_id);
+                    counter!("ws.disconnect_total", "reason" => "client_close").increment(1);
                     break;
                 }
                 _ => {}
@@ -103,12 +107,14 @@ impl WebsocketConnection {
                 self.respond(ServerMessage::Error(
                     "Too many requests. Please wait a moment.".into(),
                 ));
+                counter!("ws.rate_limit_total", "action" => "drop").increment(1);
                 return ControlFlow::Continue(());
             }
             RateLimitResult::Warn => {
                 self.respond(ServerMessage::Error(
                     "You are being rate limited. Continued excessive requests may result in a disconnect.".into(),
                 ));
+                counter!("ws.rate_limit_total", "action" => "warn").increment(1);
                 return ControlFlow::Continue(());
             }
             RateLimitResult::Disconnect => {
@@ -126,6 +132,8 @@ impl WebsocketConnection {
                     "[{}] Disconnected for rate limit abuse, {infractions} infractions.",
                     self.user_id
                 );
+                counter!("ws.disconnect_total", "reason" => "rate_limit").increment(1);
+                counter!("ws.rate_limit_total", "action" => "disconnect").increment(1);
                 return ControlFlow::Break(());
             }
         }

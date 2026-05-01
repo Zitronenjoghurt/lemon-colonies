@@ -1,6 +1,7 @@
 use crate::config::Config;
+use crate::layers::metrics::metrics_middleware;
 use axum::routing::get;
-use axum::Router;
+use axum::{middleware, Router};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -29,11 +30,22 @@ async fn main() {
 
     let prometheus_handle = PrometheusBuilder::new().install_recorder().unwrap();
 
+    let collector = metrics_process::Collector::default();
+    collector.describe();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(15));
+        loop {
+            interval.tick().await;
+            collector.collect();
+        }
+    });
+
     let router = Router::new()
         .route("/ws", get(websocket::ws_handler))
         .nest("/api", api)
         .fallback_service(ServeDir::new("./static"))
         .layer(session_layer)
+        .layer(middleware::from_fn(metrics_middleware))
         .with_state(state);
 
     let metrics_router = Router::new().route(
