@@ -14,6 +14,7 @@ bitcode = { workspace = true, optional = true }
 bitflags = "2.11.1"
 fastrand = "2.4.1"
 futures = { version = "0.3.32", optional = true }
+metrics = { version = "0.24.5", optional = true }
 num-traits = "0.2.19"
 sea-orm = { version = "2.0.0-rc.37", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"], optional = true }
 serde = { workspace = true, optional = true }

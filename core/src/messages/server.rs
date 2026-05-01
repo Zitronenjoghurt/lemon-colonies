@@ -34,4 +34,19 @@ impl ServerMessage {
     pub fn from_bytes(bytes: &[u8]) -> CoreResult<Self> {
         Ok(bitcode::decode(bytes)?)
     }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Pong { .. } => "pong",
+            Self::Error(_) => "error",
+            Self::ColonyPositions(_) => "colony_positions",
+            Self::Chunks(_) => "chunks",
+            Self::ChunkUpdate(_) => "chunk_update",
+            Self::Objects(_) => "objects",
+            Self::ResourceUpdate(_) => "resource_update",
+            Self::ResourceUpdateAll(_) => "resource_update_all",
+            Self::OwnedChunks(_) => "owned_chunks",
+            Self::UserInfo(_) => "user_info",
+        }
+    }
 }

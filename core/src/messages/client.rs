@@ -51,4 +51,20 @@ impl ClientMessage {
             Self::UserInfo => 3.0,
         }
     }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Ping { .. } => "ping",
+            Self::AllResources => "all_resources",
+            Self::ColonyPositions => "colony_positions",
+            Self::ObjectCommand(_) => "object_command",
+            Self::ObjectsInChunks(_) => "object_in_chunks",
+            Self::ObjectPlacement(_) => "object_placement",
+            Self::ObjectPurchase(_) => "object_purchase",
+            Self::Resources(_) => "resources",
+            Self::SubscribeToChunks(_) => "subscribe_to_chunks",
+            Self::OwnedChunks => "owned_chunks",
+            Self::UserInfo => "user_info",
+        }
+    }
 }

@@ -12,6 +12,7 @@ use lemon_colonies_core::data::{chrono_now, IntoActiveModel, Set};
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
+use metrics::{counter, gauge, histogram};
 use std::collections::HashSet;
 use tokio::sync::mpsc;
 use tower_sessions::Session;
@@ -42,6 +43,7 @@ impl Websocket {
         };
 
         info!("User '{user_id}' connected ({connection_id}). Active connections for user: {count}");
+        gauge!("ws.unique_users").set(self.users.len() as f64);
         (connection_id, rx)
     }
 
@@ -64,6 +66,7 @@ impl Websocket {
             self.users.remove(&user_id);
             self.chunk_subscriptions.unsubscribe(connection_id);
             info!("All connections closed for '{}'.", user_id);
+            gauge!("ws.unique_users").set(self.users.len() as f64);
         }
     }
 
@@ -80,16 +83,10 @@ impl Websocket {
         };
 
         if connection_ids.len() == 1 {
-            let Some(conn) = self.connections.get(connection_ids.iter().next().unwrap()) else {
-                return;
-            };
-            let _ = conn.1.try_send(message);
+            self.send_to_connection(*connection_ids.iter().next().unwrap(), message);
         } else {
             for connection_id in connection_ids.iter() {
-                let Some(conn) = self.connections.get(connection_id) else {
-                    continue;
-                };
-                let _ = conn.1.try_send(message.clone());
+                self.send_to_connection(*connection_id, message.clone());
             }
         }
     }
@@ -201,10 +198,15 @@ async fn handle_send(
     mut rx: mpsc::Receiver<ServerMessage>,
 ) {
     while let Some(message) = rx.recv().await {
+        let msg_type = message.name();
         let encoded = message.as_bytes();
+        let msg_size = encoded.len();
         if let Err(err) = ws_send.send(Message::binary(encoded)).await {
             error!("[{connection_id}] Failed to send message: {err}");
             break;
+        } else {
+            counter!("ws.outbound_total", "type" => msg_type).increment(1);
+            histogram!("ws.outbound_size_bytes").record(msg_size as f64);
         }
     }
 }

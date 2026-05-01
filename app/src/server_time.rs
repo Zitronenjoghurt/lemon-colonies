@@ -5,7 +5,7 @@ use std::fmt::Display;
 
 const SAMPLE_COUNT: usize = 18;
 const HEARTBEAT_INTERVAL: f64 = 5.0;
-const HEARTBEAT_TIMEOUT: f64 = 15.0;
+const HEARTBEAT_TIMEOUT: f64 = 30.0;
 
 #[derive(Debug, Copy, Clone)]
 struct SyncSample {

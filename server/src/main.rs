@@ -1,6 +1,7 @@
 use crate::config::Config;
 use axum::routing::get;
 use axum::Router;
+use metrics_exporter_prometheus::PrometheusBuilder;
 use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower_http::services::ServeDir;
@@ -26,6 +27,8 @@ async fn main() {
 
     let session_layer = layers::session::build_session_layer(&state).await;
 
+    let prometheus_handle = PrometheusBuilder::new().install_recorder().unwrap();
+
     let router = Router::new()
         .route("/ws", get(websocket::ws_handler))
         .nest("/api", api)
@@ -33,14 +36,24 @@ async fn main() {
         .layer(session_layer)
         .with_state(state);
 
+    let metrics_router = Router::new().route(
+        "/metrics",
+        get(move || std::future::ready(prometheus_handle.render())),
+    );
+
     let addr = SocketAddr::from(([0, 0, 0, 0], 50434));
+    let metrics_addr = SocketAddr::from(([0, 0, 0, 0], 9091));
+
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     info!("Listening on {}", addr);
 
-    axum::serve(listener, router)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
+    let metrics_listener = tokio::net::TcpListener::bind(&metrics_addr).await.unwrap();
+    info!("Metrics on {}", metrics_addr);
+
+    tokio::select! {
+        r = axum::serve(listener, router).with_graceful_shutdown(shutdown_signal()) => r.unwrap(),
+        r = axum::serve(metrics_listener, metrics_router) => r.unwrap(),
+    }
 }
 
 async fn shutdown_signal() {

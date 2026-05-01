@@ -29,6 +29,47 @@ services:
     ports:
       - "127.0.0.1:50434:50434"
     restart: unless-stopped
+    networks:
+      - default
+
+  postgres-exporter:
+    container_name: lemon-colonies-postgres-exporter
+    image: prometheuscommunity/postgres-exporter:latest
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+    env_file:
+      - .env
+    networks:
+      - default
+
+  prometheus:
+    container_name: lemon-colonies-prometheus
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - lemcol_prometheus_data:/prometheus
+    networks:
+      - default
+
+  grafana:
+    container_name: lemon-colonies-grafana
+    image: grafana/grafana:latest
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - lemcol_grafana_data:/var/lib/grafana
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - default
 
 volumes:
   lemcol_db_data:
+  lemcol_prometheus_data:
+  lemcol_grafana_data:

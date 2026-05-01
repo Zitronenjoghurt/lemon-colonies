@@ -21,6 +21,7 @@ use lemon_colonies_core::messages::client::object_purchase::ObjectPurchase;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::chunk_update::ChunkUpdate;
 use lemon_colonies_core::messages::server::ServerMessage;
+use metrics::gauge;
 use std::collections::HashSet;
 use std::ops::ControlFlow;
 use std::time::Duration;
@@ -50,6 +51,8 @@ impl WebsocketConnection {
     }
 
     pub async fn handle_receive(mut self, mut ws_receive: SplitStream<WebSocket>) {
+        gauge!("ws.active_connections").increment(1.0);
+
         loop {
             let msg = match timeout(IDLE_TIMEOUT, ws_receive.next()).await {
                 Ok(Some(Ok(message))) => message,
@@ -79,9 +82,13 @@ impl WebsocketConnection {
                 _ => {}
             }
         }
+
+        gauge!("ws.active_connections").decrement(1.0);
     }
 
     async fn handle_binary(&mut self, data: &[u8]) -> ControlFlow<()> {
+        metrics::histogram!("ws.inbound_size_bytes").record(data.len() as f64);
+
         let message = match ClientMessage::from_bytes(data) {
             Ok(msg) => msg,
             Err(e) => {
@@ -146,6 +153,11 @@ impl WebsocketConnection {
     }
 
     async fn handle_client_message(&self, message: ClientMessage) -> ServerResult<()> {
+        let msg_type = message.name();
+        metrics::counter!("ws.inbound_total", "type" => msg_type).increment(1);
+
+        let start = std::time::Instant::now();
+
         match message {
             ClientMessage::Ping { client_time } => self.handle_ping(client_time).await?,
             ClientMessage::AllResources => self.handle_all_resources().await?,
@@ -163,6 +175,10 @@ impl WebsocketConnection {
             ClientMessage::OwnedChunks => self.handle_owned_chunks().await?,
             ClientMessage::UserInfo => self.handle_user_info().await?,
         };
+
+        let elapsed = start.elapsed().as_secs_f64();
+        metrics::histogram!("ws.inbound_duration_secs", "type" => msg_type).record(elapsed);
+
         Ok(())
     }
 }

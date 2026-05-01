@@ -6,6 +6,7 @@ resolver = "2"
 lemon-colonies-core = { path = "core" }
 anyhow = "1.0.102"
 bitcode = "0.6.9"
+heck = "0.5.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 strum = "0.28.0"

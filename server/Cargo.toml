@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-lemon-colonies-core = { workspace = true, features = ["bitcode", "data", "serde"] }
+lemon-colonies-core = { workspace = true, features = ["bitcode", "data", "metrics", "serde"] }
 axum = { version = "0.8.8", features = ["ws"] }
 dashmap = "6.1.0"
 futures-util = "0.3.32"
+metrics = "0.24.5"
+metrics-exporter-prometheus = "0.18.3"
 oauth2 = "5.0.0"
 petname = "2.0.2"
 serde = { workspace = true }
