@@ -1,4 +1,4 @@
-.PHONY: up down build migration
+.PHONY: up down build migration entities check dev
 
 up:
 	docker compose -f docker/docker-compose.yml up -d
@@ -21,3 +21,6 @@ check:
 	cargo check -p lemon-colonies-core --features serde
 	cargo check -p lemon-colonies-core --features data
 	cargo test --bin lemon-colonies-app
+
+dev:
+	docker compose -f docker/docker-compose.yml --profile dev up server-dev db postgres-exporter prometheus grafana

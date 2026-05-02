@@ -23,6 +23,8 @@ async fn main() {
     info!("Starting server...");
 
     let config = Config::from_env().unwrap();
+    let static_dir = config.static_dir.clone();
+
     let state = state::ServerState::new(config).await.unwrap();
     let api = api::build().await;
 
@@ -43,7 +45,7 @@ async fn main() {
     let router = Router::new()
         .route("/ws", get(websocket::ws_handler))
         .nest("/api", api)
-        .fallback_service(ServeDir::new("./static"))
+        .fallback_service(ServeDir::new(static_dir))
         .layer(session_layer)
         .layer(middleware::from_fn(metrics_middleware))
         .with_state(state);

@@ -32,6 +32,35 @@ services:
     networks:
       - default
 
+  server-dev:
+    container_name: lemon-colonies
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    env_file: [ .env ]
+    ports:
+      - "127.0.0.1:50434:50434"
+      - "127.0.0.1:9091:9091"
+    volumes:
+      - ..:/build
+      - lemcol_cargo_target:/build/target
+      - lemcol_cargo_registry:/usr/local/cargo/registry
+    depends_on:
+      db: { condition: service_healthy }
+    init: true
+    command: >-
+      cargo watch -w core -w server -w app --delay 10
+      -s "cargo build --bin lemon-colonies-server
+      && cargo build --release --target wasm32-unknown-unknown -p lemon-colonies-app
+      && mkdir -p /tmp/static
+      && cp target/wasm32-unknown-unknown/release/lemon-colonies-app.wasm /tmp/static/
+      && cp app/index.html /tmp/static/
+      && cp -r app/public /tmp/static/
+      && exec cargo run --bin lemon-colonies-server"
+    environment:
+      - STATIC_DIR=/tmp/static
+    profiles: [ dev ]
+
   postgres-exporter:
     container_name: lemon-colonies-postgres-exporter
     image: prometheuscommunity/postgres-exporter:latest
@@ -73,3 +102,5 @@ volumes:
   lemcol_db_data:
   lemcol_prometheus_data:
   lemcol_grafana_data:
+  lemcol_cargo_target:
+  lemcol_cargo_registry:
