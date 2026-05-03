@@ -143,6 +143,9 @@ impl App {
             ServerMessage::OwnedChunks(chunks) => {
                 self.game.handle_owned_chunks(chunks);
             }
+            ServerMessage::PlayerOwnedChunks(chunks) => {
+                self.game.handle_player_owned_chunks(chunks);
+            }
             ServerMessage::UserInfo(info) => {
                 self.game.handle_user_info(info);
             }

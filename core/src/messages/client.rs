@@ -21,7 +21,7 @@ pub enum ClientMessage {
     ObjectPurchase(ObjectPurchase),
     Resources(HashSet<ResourceId>),
     SubscribeToChunks(Rect<i32>),
-    OwnedChunks,
+    PlayerOwnedChunks,
     UserInfo,
 }
 
@@ -47,7 +47,7 @@ impl ClientMessage {
             Self::ObjectPurchase(_) => 6.0,
             Self::Resources(_) => 3.0,
             Self::SubscribeToChunks(_) => 12.0,
-            Self::OwnedChunks => 3.0,
+            Self::PlayerOwnedChunks => 3.0,
             Self::UserInfo => 3.0,
         }
     }
@@ -63,7 +63,7 @@ impl ClientMessage {
             Self::ObjectPurchase(_) => "object_purchase",
             Self::Resources(_) => "resources",
             Self::SubscribeToChunks(_) => "subscribe_to_chunks",
-            Self::OwnedChunks => "owned_chunks",
+            Self::PlayerOwnedChunks => "player_owned_chunks",
             Self::UserInfo => "user_info",
         }
     }

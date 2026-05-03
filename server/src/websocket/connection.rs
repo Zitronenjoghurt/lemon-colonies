@@ -180,7 +180,7 @@ impl WebsocketConnection {
             ClientMessage::ObjectPurchase(purchase) => {
                 self.handle_object_purchase(purchase).await?
             }
-            ClientMessage::OwnedChunks => self.handle_owned_chunks().await?,
+            ClientMessage::PlayerOwnedChunks => self.handle_player_owned_chunks().await?,
             ClientMessage::UserInfo => self.handle_user_info().await?,
         };
 
@@ -252,6 +252,15 @@ impl WebsocketConnection {
                 self.respond(ServerMessage::Chunks(chunks));
             }
         }
+
+        let mut owned_chunks = self
+            .state
+            .data
+            .colony_chunk
+            .find_owned_coords_in_rect(rect)
+            .await?;
+        visibility.evict_invisible_chunk_coords(&mut owned_chunks);
+        self.send_to_user(self.user_id, ServerMessage::OwnedChunks(owned_chunks));
 
         Ok(())
     }
@@ -366,14 +375,14 @@ impl WebsocketConnection {
         Ok(())
     }
 
-    async fn handle_owned_chunks(&self) -> ServerResult<()> {
+    async fn handle_player_owned_chunks(&self) -> ServerResult<()> {
         let owned_chunks = self
             .state
             .service
             .user
             .get_owned_chunk_coords(self.user_id)
             .await?;
-        self.respond(ServerMessage::OwnedChunks(owned_chunks));
+        self.respond(ServerMessage::PlayerOwnedChunks(owned_chunks));
 
         Ok(())
     }

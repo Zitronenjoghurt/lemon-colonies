@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use egui_macroquad::macroquad::time::get_time;
 use lemon_colonies_core::game::object::command::ObjectCommand;
 use lemon_colonies_core::game::object::purchase::PurchasableObject;
@@ -9,6 +8,7 @@ use lemon_colonies_core::messages::client::object_purchase::ObjectPurchase;
 use lemon_colonies_core::messages::client::ClientMessage;
 use lemon_colonies_core::messages::server::ServerMessage;
 use quad_net::web_socket::WebSocket;
+use std::collections::HashSet;
 
 pub mod fetchable;
 
@@ -106,8 +106,8 @@ impl Ws {
         self.send_bytes(&ClientMessage::ObjectPurchase(ObjectPurchase { kind, pos }).as_bytes());
     }
 
-    pub fn request_owned_chunks(&mut self) {
-        self.send_bytes(&ClientMessage::OwnedChunks.as_bytes());
+    pub fn request_player_owned_chunks(&mut self) {
+        self.send_bytes(&ClientMessage::PlayerOwnedChunks.as_bytes());
     }
 
     pub fn request_all_resources(&mut self) {

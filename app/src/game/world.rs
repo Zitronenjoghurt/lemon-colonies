@@ -17,6 +17,7 @@ const CHUNK_RETAIN_PADDING: i32 = 10;
 const CHUNK_BORDER_THICKNESS: f32 = 1.0;
 const TERRITORY_OUTLINE_THICKNESS: f32 = 2.0;
 const TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 6.0, 0.0, 0.8);
+const FOREIGN_TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 0.0, 0.0, 0.8);
 
 const SECONDS_PER_TICK: f64 = 1.0;
 
@@ -30,6 +31,7 @@ pub struct WorldDrawSettings {
 pub struct ClientWorld {
     chunks: HashMap<ChunkCoords, ClientChunk>,
     chunks_with_pending_objects: HashSet<ChunkCoords>,
+    foreign_owned_chunks: HashSet<ChunkCoords>,
     object_count: usize,
     last_tick: f64,
 }
@@ -56,6 +58,7 @@ impl ClientWorld {
         self.draw_objects(store, settings);
         self.draw_chunk_grid(settings);
         self.draw_territory_outline(data);
+        self.draw_foreign_territory_outline();
 
         set_default_camera();
     }
@@ -121,57 +124,50 @@ impl ClientWorld {
         }
     }
 
-    fn draw_territory_outline(&self, data: &ClientData) {
-        let Some(owned) = data.owned_chunks.value() else {
-            return;
-        };
-
-        for &pos in owned {
+    fn draw_outline(chunks: &HashSet<ChunkCoords>, color: Color) {
+        for &pos in chunks {
             let x = pos.x as f32 * CHUNK_EDGE_PIXELS as f32;
             let y = pos.y as f32 * CHUNK_EDGE_PIXELS as f32;
             let size = CHUNK_EDGE_PIXELS as f32;
 
-            if !owned.contains(&ChunkCoords::new(pos.x, pos.y - 1)) {
+            if !chunks.contains(&ChunkCoords::new(pos.x, pos.y - 1)) {
+                draw_line(x, y, x + size, y, TERRITORY_OUTLINE_THICKNESS, color);
+            }
+            if !chunks.contains(&ChunkCoords::new(pos.x, pos.y + 1)) {
                 draw_line(
                     x,
-                    y,
+                    y + size,
                     x + size,
-                    y,
+                    y + size,
                     TERRITORY_OUTLINE_THICKNESS,
-                    TERRITORY_OUTLINE_COLOR,
+                    color,
                 );
             }
-            if !owned.contains(&ChunkCoords::new(pos.x, pos.y + 1)) {
-                draw_line(
-                    x,
-                    y + size,
-                    x + size,
-                    y + size,
-                    TERRITORY_OUTLINE_THICKNESS,
-                    TERRITORY_OUTLINE_COLOR,
-                );
+            if !chunks.contains(&ChunkCoords::new(pos.x - 1, pos.y)) {
+                draw_line(x, y, x, y + size, TERRITORY_OUTLINE_THICKNESS, color);
             }
-            if !owned.contains(&ChunkCoords::new(pos.x - 1, pos.y)) {
-                draw_line(
-                    x,
-                    y,
-                    x,
-                    y + size,
-                    TERRITORY_OUTLINE_THICKNESS,
-                    TERRITORY_OUTLINE_COLOR,
-                );
-            }
-            if !owned.contains(&ChunkCoords::new(pos.x + 1, pos.y)) {
+            if !chunks.contains(&ChunkCoords::new(pos.x + 1, pos.y)) {
                 draw_line(
                     x + size,
                     y,
                     x + size,
                     y + size,
                     TERRITORY_OUTLINE_THICKNESS,
-                    TERRITORY_OUTLINE_COLOR,
+                    color,
                 );
             }
         }
+    }
+
+    fn draw_territory_outline(&self, data: &ClientData) {
+        let Some(owned) = data.player_owned_chunks.value() else {
+            return;
+        };
+        Self::draw_outline(owned, TERRITORY_OUTLINE_COLOR);
+    }
+
+    fn draw_foreign_territory_outline(&self) {
+        Self::draw_outline(&self.foreign_owned_chunks, FOREIGN_TERRITORY_OUTLINE_COLOR);
     }
 
     fn draw_chunk_grid(&self, settings: &WorldDrawSettings) {
@@ -194,15 +190,18 @@ impl ClientWorld {
         }
     }
 
-    pub fn unload_distant_chunks(&mut self, rect: lemon_colonies_core::math::rect::Rect<i32>) {
+    pub fn unload_distant_chunks(&mut self, rect: Rect<i32>) {
         let safe_min_x = rect.min.x - CHUNK_RETAIN_PADDING;
         let safe_max_x = rect.max.x + CHUNK_RETAIN_PADDING;
         let safe_min_y = rect.min.y - CHUNK_RETAIN_PADDING;
         let safe_max_y = rect.max.y + CHUNK_RETAIN_PADDING;
 
-        self.chunks.retain(|pos, _| {
+        let in_range = |pos: &ChunkCoords| {
             pos.x >= safe_min_x && pos.x <= safe_max_x && pos.y >= safe_min_y && pos.y <= safe_max_y
-        });
+        };
+
+        self.chunks.retain(|pos, _| in_range(pos));
+        self.foreign_owned_chunks.retain(in_range);
         self.recalculate_object_count();
     }
 
@@ -244,6 +243,15 @@ impl ClientWorld {
 
     pub fn take_chunks_with_pending_objects(&mut self) -> HashSet<ChunkCoords> {
         std::mem::take(&mut self.chunks_with_pending_objects)
+    }
+
+    pub fn insert_owned_chunks(&mut self, chunks: HashSet<ChunkCoords>, data: &ClientData) {
+        if let Some(player_owned) = data.player_owned_chunks.value() {
+            self.foreign_owned_chunks
+                .extend(chunks.difference(player_owned).copied());
+        } else {
+            self.foreign_owned_chunks.extend(chunks);
+        }
     }
 
     pub fn update_objects(&mut self, objects: Vec<Object>) {

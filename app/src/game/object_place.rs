@@ -85,7 +85,7 @@ impl ObjectPlace {
         for chunk_y in chunk_min.y..=chunk_max.y {
             for chunk_x in chunk_min.x..=chunk_max.x {
                 let chunk_coords = ChunkCoords::new(chunk_x, chunk_y);
-                if let Some(owned_chunks) = data.owned_chunks.value()
+                if let Some(owned_chunks) = data.player_owned_chunks.value()
                     && !owned_chunks.contains(&chunk_coords)
                 {
                     self.collision_detected = true;

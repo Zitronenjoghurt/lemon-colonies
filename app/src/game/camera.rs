@@ -93,6 +93,10 @@ impl ClientCamera {
         let coords = self.camera.screen_to_world(screen);
         WorldCoords::new(coords.x, coords.y)
     }
+
+    pub fn set_position(&mut self, x: f32, y: f32) {
+        self.camera.target = vec2(x, y);
+    }
 }
 
 pub fn mouse_screen_coords() -> Vec2 {

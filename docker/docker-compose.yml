@@ -49,7 +49,7 @@ services:
       db: { condition: service_healthy }
     init: true
     command: >-
-      cargo watch -w core -w server -w app --delay 10
+      cargo watch -w core -w server -w app --delay 5
       -s "cargo build --bin lemon-colonies-server
       && cargo build --release --target wasm32-unknown-unknown -p lemon-colonies-app
       && mkdir -p /tmp/static

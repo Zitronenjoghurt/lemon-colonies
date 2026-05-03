@@ -21,6 +21,7 @@ pub enum ServerMessage {
     ResourceUpdate(ResourceBag),
     ResourceUpdateAll(ResourceBag),
     OwnedChunks(HashSet<ChunkCoords>),
+    PlayerOwnedChunks(HashSet<ChunkCoords>),
     UserInfo(PrivateUserInfo),
 }
 
@@ -46,6 +47,7 @@ impl ServerMessage {
             Self::ResourceUpdate(_) => "resource_update",
             Self::ResourceUpdateAll(_) => "resource_update_all",
             Self::OwnedChunks(_) => "owned_chunks",
+            Self::PlayerOwnedChunks(_) => "player_owned_chunks",
             Self::UserInfo(_) => "user_info",
         }
     }

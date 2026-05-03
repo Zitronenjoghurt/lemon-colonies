@@ -7,7 +7,7 @@ use std::collections::HashSet;
 #[derive(Default)]
 pub struct ClientData {
     pub colony_positions: Fetchable<HashSet<ChunkCoords>>,
-    pub owned_chunks: Fetchable<HashSet<ChunkCoords>>,
+    pub player_owned_chunks: Fetchable<HashSet<ChunkCoords>>,
     pub resources: Fetchable<ResourceBag>,
     pub user_info: Fetchable<PrivateUserInfo>,
 }
@@ -19,9 +19,9 @@ impl ClientData {
             ws.request_colony_positions();
         }
 
-        if self.owned_chunks.needs_fetch() {
-            self.owned_chunks.set_pending();
-            ws.request_owned_chunks();
+        if self.player_owned_chunks.needs_fetch() {
+            self.player_owned_chunks.set_pending();
+            ws.request_player_owned_chunks();
         }
 
         if self.resources.needs_fetch() {

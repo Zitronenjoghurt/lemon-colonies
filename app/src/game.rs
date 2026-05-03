@@ -12,7 +12,7 @@ use egui_macroquad::macroquad::prelude::get_time;
 use lemon_colonies_core::game::chunk::{Chunk, ChunkObject};
 use lemon_colonies_core::game::object::{Object, ObjectId};
 use lemon_colonies_core::game::resource::ResourceBag;
-use lemon_colonies_core::math::coords::ChunkCoords;
+use lemon_colonies_core::math::coords::{ChunkCoords, LocalCoords};
 use lemon_colonies_core::math::rect::Rect;
 use lemon_colonies_core::messages::server::chunk_update::{ChunkUpdate, ChunkUpdateKind};
 use lemon_colonies_core::types::user_info::PrivateUserInfo;
@@ -144,6 +144,11 @@ impl Game {
         self.data
             .colony_positions
             .set_value(positions.iter().copied().collect());
+
+        if let Some(primary_position) = positions.first() {
+            let world = primary_position.with_local(LocalCoords::center()).world();
+            self.camera.set_position(world.x, world.y);
+        }
     }
 
     pub fn handle_chunk_update(&mut self, update: ChunkUpdate) {
@@ -157,8 +162,12 @@ impl Game {
     }
 
     pub fn handle_owned_chunks(&mut self, chunks: HashSet<ChunkCoords>) {
+        self.world.insert_owned_chunks(chunks, &self.data);
+    }
+
+    pub fn handle_player_owned_chunks(&mut self, chunks: HashSet<ChunkCoords>) {
         self.data
-            .owned_chunks
+            .player_owned_chunks
             .set_value(chunks.iter().copied().collect());
     }
 

@@ -1,9 +1,13 @@
 use crate::data::entity::{colony, colony_chunk, user};
 use crate::data::store::Store;
 use crate::error::CoreResult;
+use crate::math::coords::ChunkCoords;
+use crate::math::rect::Rect;
+use futures::{StreamExt, TryStreamExt};
 use sea_orm::sea_query::IntoCondition;
-use sea_orm::QueryFilter;
+use sea_orm::{ColumnTrait, ExprTrait, QueryFilter};
 use sea_orm::{DatabaseConnection, EntityTrait, Linked, RelationDef, RelationTrait};
+use std::collections::HashSet;
 
 pub struct ColonyChunkStore {
     connection: DatabaseConnection,
@@ -44,6 +48,25 @@ impl ColonyChunkStore {
                 user.expect("colony_chunk always has an owner via colony"),
             )
         }))
+    }
+
+    pub async fn find_owned_coords_in_rect(
+        &self,
+        rect: Rect<i32>,
+    ) -> CoreResult<HashSet<ChunkCoords>> {
+        let mut stream = self
+            .stream_by(
+                colony_chunk::Column::ChunkX
+                    .between(rect.min.x, rect.max.x)
+                    .and(colony_chunk::Column::ChunkY.between(rect.min.y, rect.max.y)),
+            )
+            .await?;
+
+        let mut coords = HashSet::new();
+        while let Some(m) = stream.try_next().await? {
+            coords.insert(ChunkCoords::new(m.chunk_x, m.chunk_y));
+        }
+        Ok(coords)
     }
 }
 

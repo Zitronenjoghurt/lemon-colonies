@@ -140,6 +140,10 @@ impl LocalCoords {
         Self { x, y }
     }
 
+    pub fn center() -> Self {
+        Self { x: 127, y: 127 }
+    }
+
     pub fn with_chunk(&self, chunk: ChunkCoords) -> ChunkLocal {
         ChunkLocal::new(chunk, *self)
     }

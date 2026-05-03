@@ -1,5 +1,7 @@
 use crate::math::circle::Circle;
+use crate::math::coords::ChunkCoords;
 use crate::math::point::Point;
+use std::collections::HashSet;
 
 #[derive(Default, Clone)]
 #[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
@@ -18,5 +20,9 @@ impl ChunkVisibility {
         self.areas
             .iter()
             .any(|entry| entry.contains(&Point::new(target_x, target_y)))
+    }
+
+    pub fn evict_invisible_chunk_coords(&self, coords: &mut HashSet<ChunkCoords>) {
+        coords.retain(|coords| self.is_visible(coords.x, coords.y));
     }
 }
