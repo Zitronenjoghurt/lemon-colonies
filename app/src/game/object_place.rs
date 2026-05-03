@@ -32,6 +32,7 @@ impl ObjectPlace {
     pub fn purchase(&mut self, purchase: PurchasableObject) {
         self.target_data = Some(purchase.object_data());
         self.purchase = Some(purchase);
+        self.continuous = true;
     }
 
     pub fn update(
@@ -46,6 +47,7 @@ impl ObjectPlace {
         }
 
         if is_mouse_button_pressed(MouseButton::Right) {
+            self.purchase = None;
             self.target_data = None;
             self.continuous = false;
             return;
@@ -101,6 +103,10 @@ impl ObjectPlace {
 
     pub fn wants_to_place(&self) -> bool {
         self.target_data.is_some()
+    }
+
+    pub fn purchasable_object(&self) -> &Option<PurchasableObject> {
+        &self.purchase
     }
 }
 

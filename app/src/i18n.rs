@@ -2,6 +2,7 @@ use crate::ui::windows::WindowId;
 use heck::ToSnakeCase;
 use lemon_colonies_core::game::object::data::bush::BushKind;
 use lemon_colonies_core::game::object::kind::ObjectKind;
+use lemon_colonies_core::game::object::purchase::{PurchasableObject, PurchasableObjectCategory};
 use lemon_colonies_core::game::resource::ResourceId;
 use lemon_colonies_core::lingo::Lingo;
 use serde::{Deserialize, Serialize};
@@ -123,6 +124,24 @@ impl Translatable for ResourceId {
 impl TranslatablePlural for ResourceId {
     fn plural_key(&self) -> String {
         format!("resource.{}.plural", format!("{:?}", self).to_snake_case())
+    }
+}
+
+impl Translatable for PurchasableObject {
+    fn key(&self) -> String {
+        match self {
+            Self::BlueberryBush => BushKind::Blueberry.key(),
+            Self::RaspberryBush => BushKind::Raspberry.key(),
+            Self::GolberryBush => BushKind::Golberry.key(),
+        }
+    }
+}
+
+impl Translatable for PurchasableObjectCategory {
+    fn key(&self) -> String {
+        match self {
+            Self::Plants => Lingo::Plants.key(),
+        }
     }
 }
 

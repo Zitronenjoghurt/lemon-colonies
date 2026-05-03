@@ -30,6 +30,7 @@ impl<'a> UiViewer<'a> {
         panels::meta::show(ctx, self);
         panels::info::show(ctx, self);
         panels::action::show(ctx, self);
+        panels::sub_action::show(ctx, self);
         panels::hover::show(ctx, self);
 
         self.show_windows(ctx);

@@ -1,7 +1,8 @@
-use crate::i18n::TranslatablePlural;
+use crate::i18n::Translatable;
+use crate::ui::widgets::icon_label::IconLabel;
 use crate::ui::{phosphor, UiViewer};
 use egui_macroquad::egui;
-use egui_macroquad::egui::{Grid, ScrollArea, SidePanel};
+use egui_macroquad::egui::{Grid, ScrollArea, SidePanel, Widget};
 use lemon_colonies_core::game::resource::ResourceId;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
@@ -51,10 +52,7 @@ fn show_inventory(ui: &mut egui::Ui, v: &mut UiViewer) {
             .striped(true)
             .show(ui, |ui| {
                 for rid in ResourceId::iter() {
-                    ui.horizontal(|ui| {
-                        ui.add(v.icons.image(rid.icon(), 16.0));
-                        ui.small(rid.tp());
-                    });
+                    IconLabel::new(v.icons, rid.icon(), rid.t()).small().ui(ui);
                     ui.small(resources.get(rid).to_string());
                     ui.end_row();
                 }

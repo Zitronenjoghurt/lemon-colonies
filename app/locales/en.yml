@@ -16,6 +16,7 @@ common:
   object_bounds: Object bounds
   object_collisions: Object collisions
   place_verb: Place
+  plants: Plants
   position: Position
   server_time: Server time
   top: Top

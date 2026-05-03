@@ -1,6 +1,6 @@
 use crate::i18n::Translatable;
 use crate::settings::Settings;
-use crate::ui::panels::ActionPanelPosition;
+use crate::ui::panels::action::ActionPanelPosition;
 use crate::ui::widgets::generic_select::GenericSelect;
 use crate::ui::widgets::reset_slider::ResetSlider;
 use egui_macroquad::egui::{Grid, Response, ScrollArea, Ui, Widget};

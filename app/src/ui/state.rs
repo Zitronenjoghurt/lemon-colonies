@@ -1,5 +1,6 @@
 use crate::storage::Storage;
 use crate::ui::panels::info::InfoPanelTab;
+use crate::ui::panels::sub_action::SubActionTab;
 use crate::ui::windows::WindowId;
 use std::collections::HashSet;
 
@@ -8,6 +9,7 @@ const SAVE_INTERVAL: f64 = 30.0;
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct UiState {
     pub info_panel_tab: InfoPanelTab,
+    pub sub_action_panel_tab: Option<SubActionTab>,
     windows: HashSet<WindowId>,
     #[serde(skip, default)]
     last_save: f64,

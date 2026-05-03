@@ -16,6 +16,7 @@ common:
   object_bounds: Objektbegrenzungen
   object_collisions: Objektkollisionen
   place_verb: Platzieren
+  plants: Pflanzen
   position: Position
   server_time: Serverzeit
   top: Oben

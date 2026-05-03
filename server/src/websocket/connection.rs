@@ -344,7 +344,8 @@ impl WebsocketConnection {
         let rect = purchase.collision_rect();
 
         let txn = self.state.data.begin_txn().await?;
-        self.state
+        let resources = self
+            .state
             .data
             .user_resources
             .adjust(&txn, self.user_id, &purchase.kind.resource_adjustments())
@@ -371,6 +372,8 @@ impl WebsocketConnection {
         self.state.ws.send_chunk_update(self.user_id, chunk_update);
 
         txn.commit().await.map_err(CoreError::from)?;
+
+        self.respond(ServerMessage::ResourceUpdate(resources));
 
         Ok(())
     }

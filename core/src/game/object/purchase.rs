@@ -1,7 +1,7 @@
 use crate::game::icon::Icon;
 use crate::game::object::data::bush::BushObject;
 use crate::game::object::data::ObjectData;
-use crate::game::resource::ResourceId;
+use crate::game::resource::{ResourceBag, ResourceId};
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
@@ -43,6 +43,34 @@ impl PurchasableObject {
             Self::BlueberryBush => ObjectData::Bush(BushObject::blueberry()),
             Self::RaspberryBush => ObjectData::Bush(BushObject::raspberry()),
             Self::GolberryBush => ObjectData::Bush(BushObject::golberry()),
+        }
+    }
+
+    pub fn can_buy(&self, resources: &ResourceBag) -> bool {
+        for (rid, cost) in self.base_costs() {
+            if resources.get(*rid) < *cost {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, EnumIter, EnumCount, FromRepr)]
+#[cfg_attr(feature = "bitcode", derive(bitcode::Encode, bitcode::Decode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PurchasableObjectCategory {
+    Plants,
+}
+
+impl PurchasableObjectCategory {
+    pub fn objects(&self) -> &[PurchasableObject] {
+        match self {
+            Self::Plants => &[
+                PurchasableObject::BlueberryBush,
+                PurchasableObject::RaspberryBush,
+                PurchasableObject::GolberryBush,
+            ],
         }
     }
 }

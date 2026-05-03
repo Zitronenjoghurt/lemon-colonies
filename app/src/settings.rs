@@ -1,6 +1,6 @@
 use crate::i18n::Locale;
 use crate::storage::Storage;
-use crate::ui::panels::ActionPanelPosition;
+use crate::ui::panels::action::ActionPanelPosition;
 use egui_macroquad::egui;
 
 #[derive(serde::Serialize, serde::Deserialize)]

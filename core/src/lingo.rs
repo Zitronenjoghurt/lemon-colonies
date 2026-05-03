@@ -19,6 +19,7 @@ pub enum Lingo {
     ObjectBounds,
     ObjectCollisions,
     PlaceVerb,
+    Plants,
     Position,
     ServerTime,
     Top,
