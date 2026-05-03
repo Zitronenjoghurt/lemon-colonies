@@ -4,8 +4,10 @@ use crate::game::chunk::ClientChunk;
 use crate::game::data::ClientData;
 use crate::game::sprite::{HasSprite, SpriteDraw};
 use crate::server_time::ServerTime;
+use egui_macroquad::macroquad::logging::info;
+use egui_macroquad::macroquad::prelude::Rect as GlamRect;
 use egui_macroquad::macroquad::prelude::{
-    draw_line, draw_rectangle_lines, set_default_camera, Color, Rect as GlamRect,
+    draw_line, draw_rectangle_lines, get_time, set_default_camera, Color,
 };
 use lemon_colonies_core::game::chunk::{Chunk, CHUNK_EDGE_PIXELS};
 use lemon_colonies_core::game::object::Object;
@@ -20,6 +22,7 @@ const TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 6.0, 0.0, 0.8);
 const FOREIGN_TERRITORY_OUTLINE_COLOR: Color = Color::new(1.0, 0.0, 0.0, 0.8);
 
 const SECONDS_PER_TICK: f64 = 1.0;
+const DRAW_CACHE_DEBOUNCE_SECS: f64 = 0.1;
 
 pub struct WorldDrawSettings {
     pub chunk_borders: bool,
@@ -34,6 +37,9 @@ pub struct ClientWorld {
     foreign_owned_chunks: HashSet<ChunkCoords>,
     object_count: usize,
     last_tick: f64,
+    draw_cache: Vec<SpriteDraw>,
+    draw_cache_visible: Option<Rect<i32>>,
+    draw_cache_dirty_since: Option<f64>,
 }
 
 impl ClientWorld {
@@ -54,71 +60,109 @@ impl ClientWorld {
 
         camera.apply();
 
-        self.draw_chunks();
-        self.draw_objects(store, settings);
-        self.draw_chunk_grid(settings);
+        let visible_rect = camera.visible_rect();
+
+        self.draw_chunks(&visible_rect);
+        self.draw_objects(store, settings, &visible_rect);
+        self.draw_chunk_grid(settings, &visible_rect);
         self.draw_territory_outline(data);
         self.draw_foreign_territory_outline();
 
         set_default_camera();
     }
 
-    fn draw_chunks(&mut self) {
-        for chunk in self.chunks.values() {
-            chunk.draw();
+    fn draw_chunks(&mut self, visible: &Rect<i32>) {
+        for cy in visible.min.y..=visible.max.y {
+            for cx in visible.min.x..=visible.max.x {
+                if let Some(chunk) = self.chunks.get(&ChunkCoords::new(cx, cy)) {
+                    chunk.draw();
+                }
+            }
         }
     }
 
-    fn draw_objects(&mut self, store: &AtlasStore, settings: &WorldDrawSettings) {
-        let mut draws: Vec<SpriteDraw> = Vec::new();
+    fn mark_draw_cache_dirty(&mut self) {
+        self.draw_cache_dirty_since.get_or_insert(get_time());
+    }
 
-        for chunk in self.chunks.values() {
-            for obj in chunk.chunk.objects.values() {
-                let mut draw = SpriteDraw::new(
-                    obj.visuals.sprite(),
-                    obj.pos.with_chunk(chunk.chunk.pos).world(),
-                );
-                if settings.object_bounds {
-                    let rect = obj.visuals.bounding_rect(draw.anchor);
-                    draw = draw.with_bounds(GlamRect::new(
-                        rect.min.x,
-                        rect.min.y,
-                        rect.width(),
-                        rect.height(),
-                    ))
+    fn rebuild_draw_cache(&mut self, visible: &Rect<i32>) {
+        info!("Rebuilding draw cache...");
+        self.draw_cache.clear();
+
+        for cy in visible.min.y..=visible.max.y {
+            for cx in visible.min.x..=visible.max.x {
+                let Some(chunk) = self.chunks.get(&ChunkCoords::new(cx, cy)) else {
+                    continue;
+                };
+                for obj in chunk.chunk.objects.values() {
+                    let draw = SpriteDraw::new(
+                        obj.visuals.sprite(),
+                        obj.pos.with_chunk(chunk.chunk.pos).world(),
+                    );
+
+                    let bounds_rect = obj.visuals.bounding_rect(draw.anchor);
+                    let collision_rect = obj.visuals.collision_rect(draw.anchor);
+
+                    let draw = draw
+                        .with_bounds(GlamRect::new(
+                            bounds_rect.min.x,
+                            bounds_rect.min.y,
+                            bounds_rect.width(),
+                            bounds_rect.height(),
+                        ))
+                        .with_collision(GlamRect::new(
+                            collision_rect.min.x,
+                            collision_rect.min.y,
+                            collision_rect.width(),
+                            collision_rect.height(),
+                        ));
+
+                    self.draw_cache.push(draw);
                 }
-                if settings.object_collisions {
-                    let rect = obj.visuals.collision_rect(draw.anchor);
-                    draw = draw.with_collision(GlamRect::new(
-                        rect.min.x,
-                        rect.min.y,
-                        rect.width(),
-                        rect.height(),
-                    ));
-                }
-                draws.push(draw);
             }
         }
 
-        draws.sort_by(|a, b| {
+        self.draw_cache.sort_by(|a, b| {
             a.sort_y
                 .partial_cmp(&b.sort_y)
                 .unwrap()
                 .then(a.anchor.x.partial_cmp(&b.anchor.x).unwrap())
         });
 
-        for sprite_draw in &draws {
+        self.draw_cache_dirty_since = None;
+        self.draw_cache_visible = Some(*visible);
+    }
+
+    fn draw_objects(
+        &mut self,
+        store: &AtlasStore,
+        settings: &WorldDrawSettings,
+        visible: &Rect<i32>,
+    ) {
+        let camera_changed = self.draw_cache_visible.as_ref() != Some(visible);
+        if camera_changed {
+            self.mark_draw_cache_dirty();
+        }
+
+        if self
+            .draw_cache_dirty_since
+            .is_some_and(|t| get_time() - t >= DRAW_CACHE_DEBOUNCE_SECS)
+        {
+            self.rebuild_draw_cache(visible);
+        }
+
+        for sprite_draw in &self.draw_cache {
             sprite_draw.draw(store);
         }
 
         if settings.object_bounds {
-            for sprite_draw in &draws {
+            for sprite_draw in &self.draw_cache {
                 sprite_draw.draw_bounds();
             }
         }
 
         if settings.object_collisions {
-            for sprite_draw in &draws {
+            for sprite_draw in &self.draw_cache {
                 sprite_draw.draw_collision();
             }
         }
@@ -170,23 +214,25 @@ impl ClientWorld {
         Self::draw_outline(&self.foreign_owned_chunks, FOREIGN_TERRITORY_OUTLINE_COLOR);
     }
 
-    fn draw_chunk_grid(&self, settings: &WorldDrawSettings) {
+    fn draw_chunk_grid(&self, settings: &WorldDrawSettings, visible: &Rect<i32>) {
         if !settings.chunk_borders {
             return;
         }
 
         let color = Color::new(1.0, 0.0, 1.0, 0.6);
-        for chunk in self.chunks.values() {
-            let x = chunk.chunk.pos.x as f32 * CHUNK_EDGE_PIXELS as f32;
-            let y = chunk.chunk.pos.y as f32 * CHUNK_EDGE_PIXELS as f32;
-            draw_rectangle_lines(
-                x,
-                y,
-                CHUNK_EDGE_PIXELS as f32,
-                CHUNK_EDGE_PIXELS as f32,
-                CHUNK_BORDER_THICKNESS,
-                color,
-            );
+        for cy in visible.min.y..=visible.max.y {
+            for cx in visible.min.x..=visible.max.x {
+                let x = cx as f32 * CHUNK_EDGE_PIXELS as f32;
+                let y = cy as f32 * CHUNK_EDGE_PIXELS as f32;
+                draw_rectangle_lines(
+                    x,
+                    y,
+                    CHUNK_EDGE_PIXELS as f32,
+                    CHUNK_EDGE_PIXELS as f32,
+                    CHUNK_BORDER_THICKNESS,
+                    color,
+                );
+            }
         }
     }
 
@@ -203,6 +249,7 @@ impl ClientWorld {
         self.chunks.retain(|pos, _| in_range(pos));
         self.foreign_owned_chunks.retain(in_range);
         self.recalculate_object_count();
+        self.mark_draw_cache_dirty();
     }
 
     pub fn insert_chunks(&mut self, chunks: Vec<Chunk>) {
@@ -211,6 +258,7 @@ impl ClientWorld {
             self.chunks.insert(chunk.pos, ClientChunk::new(chunk));
         }
         self.recalculate_object_count();
+        self.mark_draw_cache_dirty();
     }
 
     pub fn get_chunk(&self, pos: ChunkCoords) -> Option<&Chunk> {
@@ -235,6 +283,7 @@ impl ClientWorld {
         };
         chunk.update_object(object);
         self.recalculate_object_count();
+        self.mark_draw_cache_dirty();
     }
 
     pub fn has_pending_objects(&self) -> bool {
@@ -261,6 +310,7 @@ impl ClientWorld {
             }
         }
         self.recalculate_object_count();
+        self.mark_draw_cache_dirty();
     }
 
     pub fn rect_collides_with_object(&self, rect: Rect<f32>) -> bool {
